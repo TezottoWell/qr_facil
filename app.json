@@ -13,17 +13,32 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lui-zwellington.qr-facil"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.lui_zwellington.qr_facil"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.582095097887-mfhhm812r98v4b53qqr3invlnj4cqgu6"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "059e4118-52ea-4524-8a8d-049a1fdd5256"
+      }
     }
   }
 }
