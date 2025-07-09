@@ -11,6 +11,8 @@ import {
 } from '@react-native-google-signin/google-signin';
 import LoginScreen from './src/screens/Login';
 import WelcomeScreen from './src/screens/Welcome';
+import MyQRCodesScreen from './src/screens/MyQRCodes';
+import NewQRCodeScreen from './src/screens/NewQRCode';
 import { initDatabase, insertUser } from './src/services/database';
 
 // Configuração do Google Sign-In
@@ -22,11 +24,14 @@ GoogleSignin.configure({
   forceCodeForRefreshToken: true,
 });
 
+type Screen = 'Login' | 'Welcome' | 'MyQRCodes' | 'NewQRCode';
+
 export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<Screen>('Login');
 
   useEffect(() => {
     initializeApp();
@@ -53,6 +58,7 @@ export default function App() {
         if (isSuccessResponse(userInfo)) {
           setUser(userInfo.data.user);
           setIsSignedIn(true);
+          setCurrentScreen('Welcome');
         }
       }
     } catch (error) {
@@ -77,6 +83,7 @@ export default function App() {
         console.log('Login successful:', response.data);
         setUser(response.data.user);
         setIsSignedIn(true);
+        setCurrentScreen('Welcome');
 
         // Inserir usuário no banco de dados usando a nova API
         try {
@@ -126,16 +133,30 @@ export default function App() {
       await GoogleSignin.signOut();
       setUser(null);
       setIsSignedIn(false);
+      setCurrentScreen('Login');
       Alert.alert('Sucesso', 'Logout realizado com sucesso!');
     } catch (error) {
       console.log('Erro no logout:', error);
       Alert.alert('Erro', 'Erro ao fazer logout');
     }
   };
+  
+  const handleMyQRCodes = () => setCurrentScreen('MyQRCodes');
+  const handleNewQRCode = () => setCurrentScreen('NewQRCode');
+  const handleBack = () => setCurrentScreen('Welcome');
 
-  if (isSignedIn && user) {
-    return <WelcomeScreen user={user} handleSignOut={handleSignOut} />;
+  if (currentScreen === 'Welcome' && isSignedIn && user) {
+    return <WelcomeScreen user={user} handleSignOut={handleSignOut} handleMyQRCodes={handleMyQRCodes} handleNewQRCode={handleNewQRCode} />;
   }
+
+  if (currentScreen === 'MyQRCodes') {
+    return <MyQRCodesScreen handleBack={handleBack} />;
+  }
+  
+  if (currentScreen === 'NewQRCode') {
+    return <NewQRCodeScreen handleBack={handleBack} />;
+  }
+
 
   return <LoginScreen isLoading={isLoading} handleGoogleSignIn={handleGoogleSignIn} />;
 }
