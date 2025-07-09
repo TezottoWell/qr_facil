@@ -11,7 +11,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import LoginScreen from './src/screens/Login';
 import WelcomeScreen from './src/screens/Welcome';
-import { initDatabase } from './src/services/database';
+import { initDatabase, insertUser } from './src/services/database';
 
 // Configuração do Google Sign-In
 GoogleSignin.configure({
@@ -26,11 +26,24 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
 
   useEffect(() => {
-    initDatabase();
-    checkSignedInUser();
+    initializeApp();
   }, []);
+
+  const initializeApp = async () => {
+    try {
+      // Inicializar banco de dados
+      await initDatabase();
+      setIsDatabaseReady(true);
+      
+      // Verificar se há usuário logado
+      await checkSignedInUser();
+    } catch (error) {
+      console.error('Erro ao inicializar aplicativo:', error);
+    }
+  };
 
   const checkSignedInUser = async () => {
     try {
@@ -48,6 +61,11 @@ export default function App() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!isDatabaseReady) {
+      Alert.alert('Erro', 'Banco de dados não está pronto. Tente novamente em alguns segundos.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
@@ -60,13 +78,17 @@ export default function App() {
         setUser(response.data.user);
         setIsSignedIn(true);
 
-        // Inserir usuário no banco de dados
-        db.transaction(tx => {
-          tx.executeSql('INSERT INTO users (email, password) VALUES (?, ?)', [response.data.user.email, ''],
-            () => console.log('Usuário inserido com sucesso'),
-            (_, error) => console.log('Erro ao inserir usuário:', error)
-          );
-        });
+        // Inserir usuário no banco de dados usando a nova API
+        try {
+          await insertUser({
+            email: response.data.user.email,
+            name: response.data.user.name || '',
+            photo: response.data.user.photo || ''
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar usuário no banco:', dbError);
+          // Não bloqueamos o login mesmo se houver erro no banco
+        }
 
         Alert.alert('Sucesso', `Bem-vindo, ${response.data.user.name}!`);
       } else {
