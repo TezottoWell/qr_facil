@@ -24,23 +24,30 @@ interface WelcomeScreenProps {
 export default function WelcomeScreen({ user, handleSignOut }: WelcomeScreenProps) {
   return (
     <GradientBackground>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.subtitle}>Bem-vindo {user.name ? user.name : ""}!</Text>
-        </View>
-
-        <View style={styles.userInfo}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.userInfoHeader}>
           <Image
-            source={{ uri: user.photo || 'https://via.placeholder.com/80' }}
-            style={styles.avatar}
+            source={{ uri: user.photo || 'https://via.placeholder.com/40' }}
+            style={styles.avatarHeader}
           />
-          <Text style={styles.userName}>{user.name}</Text>
+          <View style={styles.welcomeTextContainer}>
+            <Text style={styles.welcomeText}>Bem-vindo</Text>
+            <Text style={styles.userNameHeader}>{user.name || 'Usuário'}!</Text>
+          </View>
+        </View>
+        
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutIcon}>→</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Conteúdo principal */}
+      <View style={styles.content}>
+        <View style={styles.mainContent}>
+          <Text style={styles.subtitle}>Sua conta está conectada</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
         </View>
-
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutButtonText}>Sair</Text>
-        </TouchableOpacity>
       </View>
     </GradientBackground>
   );
