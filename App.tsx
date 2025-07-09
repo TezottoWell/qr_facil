@@ -11,6 +11,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import LoginScreen from './src/screens/Login';
 import WelcomeScreen from './src/screens/Welcome';
+import { initDatabase } from './src/services/database';
 
 // Configuração do Google Sign-In
 GoogleSignin.configure({
@@ -27,6 +28,7 @@ export default function App() {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
+    initDatabase();
     checkSignedInUser();
   }, []);
 
@@ -57,6 +59,15 @@ export default function App() {
         console.log('Login successful:', response.data);
         setUser(response.data.user);
         setIsSignedIn(true);
+
+        // Inserir usuário no banco de dados
+        db.transaction(tx => {
+          tx.executeSql('INSERT INTO users (email, password) VALUES (?, ?)', [response.data.user.email, ''],
+            () => console.log('Usuário inserido com sucesso'),
+            (_, error) => console.log('Erro ao inserir usuário:', error)
+          );
+        });
+
         Alert.alert('Sucesso', `Bem-vindo, ${response.data.user.name}!`);
       } else {
         console.log('Login cancelled by user');

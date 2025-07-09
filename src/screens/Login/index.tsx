@@ -6,6 +6,7 @@ import {
   Image,
 } from 'react-native';
 import { styles } from './styles';
+import db from '../../services/database';
 
 // Componente de gradiente personalizado usando View com backgroundColor
 const GradientBackground = ({ children }: { children: React.ReactNode }) => (
@@ -21,6 +22,10 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ isLoading, handleGoogleSignIn }: LoginScreenProps) {
+  const handleLogin = () => {
+    handleGoogleSignIn();
+  };
+
   return (
     <GradientBackground>
       <View style={styles.content}>
@@ -34,7 +39,7 @@ export default function LoginScreen({ isLoading, handleGoogleSignIn }: LoginScre
         <View style={styles.loginContainer}>
           <TouchableOpacity 
             style={[styles.googleButton, isLoading && styles.googleButtonDisabled]} 
-            onPress={handleGoogleSignIn}
+            onPress={handleLogin}
             disabled={isLoading}
           >
             <View style={styles.googleButtonContent}>

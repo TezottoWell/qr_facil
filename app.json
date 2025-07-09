@@ -33,7 +33,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.582095097887-mfhhm812r98v4b53qqr3invlnj4cqgu6"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "extra": {
       "eas": {
