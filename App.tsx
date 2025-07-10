@@ -150,11 +150,11 @@ export default function App() {
   }
 
   if (currentScreen === 'MyQRCodes') {
-    return <MyQRCodesScreen handleBack={handleBack} />;
+    return <MyQRCodesScreen handleBack={handleBack} userEmail={user?.email} />;
   }
   
   if (currentScreen === 'NewQRCode') {
-    return <NewQRCodeScreen handleBack={handleBack} />;
+    return <NewQRCodeScreen handleBack={handleBack} userEmail={user?.email} />;
   }
 
 

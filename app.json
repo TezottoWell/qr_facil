@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -34,8 +34,7 @@
           "iosUrlScheme": "com.googleusercontent.apps.582095097887-mfhhm812r98v4b53qqr3invlnj4cqgu6"
         }
       ],
-      "expo-sqlite",
-      "react-native-svg"
+      "expo-sqlite"
     ],
     "extra": {
       "eas": {

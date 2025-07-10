@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 // Abrir/criar o banco de dados usando a nova API
 const openDatabase = async () => {
-  return await SQLite.openDatabaseAsync('qrfacil.db');
+  return await SQLite.openDatabaseAsync('qrfacil_v2.db'); // Nova versão para limpar cache
 };
 
 export const initDatabase = async () => {
@@ -32,6 +32,7 @@ export const initDatabase = async () => {
         foreground_color TEXT DEFAULT '#000000',
         logo_enabled INTEGER DEFAULT 0,
         logo_size REAL DEFAULT 0.2,
+        logo_icon TEXT DEFAULT '❤️',
         error_correction_level TEXT DEFAULT 'M',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_email) REFERENCES users(email)
@@ -107,6 +108,7 @@ export interface QRCodeData {
   foreground_color?: string;
   logo_enabled?: boolean;
   logo_size?: number;
+  logo_icon?: string;
   error_correction_level?: 'L' | 'M' | 'Q' | 'H';
 }
 
@@ -116,8 +118,8 @@ export const insertQRCode = async (userEmail: string, qrData: QRCodeData) => {
     
     const result = await db.runAsync(
       `INSERT INTO qr_codes 
-       (user_email, title, content, qr_type, background_color, foreground_color, logo_enabled, logo_size, error_correction_level) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_email, title, content, qr_type, background_color, foreground_color, logo_enabled, logo_size, logo_icon, error_correction_level) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userEmail,
         qrData.title,
@@ -127,6 +129,7 @@ export const insertQRCode = async (userEmail: string, qrData: QRCodeData) => {
         qrData.foreground_color || '#000000',
         qrData.logo_enabled ? 1 : 0,
         qrData.logo_size || 0.2,
+        qrData.logo_icon || '❤️',
         qrData.error_correction_level || 'M'
       ]
     );
