@@ -15,6 +15,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDatabase, insertUser } from './src/services/database';
+import { historyDB } from './src/services/historyDatabase';
 
 // Configuração do Google Sign-In
 GoogleSignin.configure({
@@ -37,8 +38,12 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
-      // Inicializar banco de dados
+      // Inicializar banco de dados principal
       await initDatabase();
+      
+      // Inicializar banco de dados do histórico
+      await historyDB.initDatabase();
+      
       setIsDatabaseReady(true);
       
       // Verificar se há usuário logado

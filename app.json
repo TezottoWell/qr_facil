@@ -17,7 +17,9 @@
       "bundleIdentifier": "com.lui-zwellington.qr-facil",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "Este app precisa acessar sua galeria de fotos para permitir adicionar logos personalizados aos seus QR codes."
+        "NSPhotoLibraryUsageDescription": "Este app precisa acessar sua galeria de fotos para permitir adicionar logos personalizados aos seus QR codes.",
+        "NSCameraUsageDescription": "Este app precisa acessar sua câmera para escanear códigos QR.",
+        "NSContactsUsageDescription": "Este app precisa acessar seus contatos para salvar informações de QR codes que contenham dados de contato."
       }
     },
     "android": {
@@ -26,7 +28,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.lui_zwellington.qr_facil"
+      "package": "com.lui_zwellington.qr_facil",
+      "permissions": ["CAMERA", "READ_CONTACTS", "WRITE_CONTACTS"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,7 +41,14 @@
           "iosUrlScheme": "com.googleusercontent.apps.582095097887-mfhhm812r98v4b53qqr3invlnj4cqgu6"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "react-native-vision-camera",
+        {
+          "enableCodeScanner": true,
+          "cameraPermissionText": "Este app precisa acessar sua câmera para escanear códigos QR."
+        }
+      ]
     ],
     "extra": {
       "eas": {

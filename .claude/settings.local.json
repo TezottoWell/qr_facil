@@ -7,7 +7,9 @@
       "Bash(npm install:*)",
       "Bash(npx expo install:*)",
       "Bash(npm uninstall:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__context-7__resolve-library-id",
+      "mcp__context-7__get-library-docs"
     ],
     "deny": []
   }

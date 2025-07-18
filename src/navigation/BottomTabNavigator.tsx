@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import WelcomeScreen from '../screens/Welcome';
+import QRScannerScreen from '../screens/QRScanner';
 import MyQRCodesScreen from '../screens/MyQRCodes';
 import NewQRCodeScreen from '../screens/NewQRCode';
+import HistoryScreen from '../screens/History';
 import { User } from '@react-native-google-signin/google-signin';
 
 const Tab = createBottomTabNavigator();
@@ -22,11 +23,13 @@ export default function BottomTabNavigator({ user, handleSignOut }: BottomTabNav
           let iconName: keyof typeof Ionicons.glyphMap;
 
           if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
+            iconName = focused ? 'camera' : 'camera-outline';
           } else if (route.name === 'MyQRCodes') {
             iconName = focused ? 'qr-code' : 'qr-code-outline';
           } else if (route.name === 'NewQRCode') {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
+          } else if (route.name === 'History') {
+            iconName = focused ? 'time' : 'time-outline';
           } else {
             iconName = 'help-outline';
           }
@@ -62,17 +65,14 @@ export default function BottomTabNavigator({ user, handleSignOut }: BottomTabNav
       <Tab.Screen 
         name="Home" 
         options={{ 
-          title: 'Início',
-          headerTitle: 'QR Fácil'
+          title: 'Scanner',
+          headerTitle: 'QR Scanner'
         }}
       >
         {(props) => (
-          <WelcomeScreen 
+          <QRScannerScreen 
             {...props}
-            user={user} 
-            handleSignOut={handleSignOut}
-            handleMyQRCodes={() => props.navigation.navigate('MyQRCodes')}
-            handleNewQRCode={() => props.navigation.navigate('NewQRCode')}
+            userEmail={user?.email}
           />
         )}
       </Tab.Screen>
@@ -101,6 +101,21 @@ export default function BottomTabNavigator({ user, handleSignOut }: BottomTabNav
       >
         {(props) => (
           <NewQRCodeScreen 
+            {...props}
+            userEmail={user?.email}
+          />
+        )}
+      </Tab.Screen>
+
+      <Tab.Screen 
+        name="History" 
+        options={{ 
+          title: 'Histórico',
+          headerTitle: 'Meu Histórico'
+        }}
+      >
+        {(props) => (
+          <HistoryScreen 
             {...props}
             userEmail={user?.email}
           />
