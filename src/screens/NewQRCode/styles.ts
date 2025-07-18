@@ -742,4 +742,155 @@ export const styles = StyleSheet.create({
   wideScreenPadding: {
     paddingHorizontal: 40,
   },
+  styleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+
+  styleOption: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+
+  styleOptionActive: {
+    backgroundColor: '#ede9fe',
+    borderColor: '#667eea',
+  },
+
+  stylePreview: {
+    width: 50,
+    height: 50,
+    marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  traditionalPreview: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 4,
+    padding: 8,
+  },
+
+  traditionalSquare: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#374151',
+  },
+
+  instagramPreview: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  instagramDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#374151',
+  },
+
+  dotsPreview: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 4,
+    padding: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dotStyle: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#374151',
+  },
+
+  roundedPreview: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 8,
+  },
+
+  roundedSquare: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#374151',
+    borderRadius: 8,
+  },
+
+  styleLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+
+  styleLabelActive: {
+    color: '#667eea',
+  },
+
+  // Estilos para gradiente
+  gradientSection: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+  },
+
+  gradientLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+
+  gradientPresets: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+
+  gradientPreset: {
+    width: '22%',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  gradientPresetColor: {
+    width: '100%',
+    height: 40,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+
+  gradientPresetLabel: {
+    fontSize: 10,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
 });

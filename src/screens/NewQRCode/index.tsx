@@ -18,9 +18,10 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { styles } from './styles';
 import { insertQRCode, QRCodeData } from '../../services/database';
+import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
 
-// Componente QRCode real
-const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon }: any) => (
+// Componente QRCode real com estilos
+const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors }: any) => (
   <View style={[
     styles.qrPreview,
     { 
@@ -33,41 +34,23 @@ const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize,
       position: 'relative'
     }
   ]}>
-    <QRCode
+    <StyledQRCode
       value={value || 'https://example.com'}
       size={size - 20}
       backgroundColor={backgroundColor || '#FFFFFF'}
-      color={color || '#000000'}
-      ecl={errorCorrectionLevel || 'M'}
+      foregroundColor={'#000000'}
+      logoEnabled={logoEnabled}
+      logoSize={logoSize}
+      logoIcon={selectedIcon}
+      errorCorrectionLevel={errorCorrectionLevel || 'M'}
+      style={qrStyle}
+      gradientColors={gradientColors}
     />
-    {logoEnabled && (
-      <View style={[
-        styles.qrLogoOverlay,
-        {
-          position: 'absolute',
-          width: (size - 20) * logoSize,
-          height: (size - 20) * logoSize,
-          backgroundColor: backgroundColor || '#FFFFFF',
-          borderRadius: ((size - 20) * logoSize) / 2,
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderWidth: 2,
-          borderColor: backgroundColor || '#FFFFFF'
-        }
-      ]}>
-        <Text style={{
-          fontSize: ((size - 20) * logoSize) * 0.6,
-          textAlign: 'center'
-        }}>
-          {selectedIcon}
-        </Text>
-      </View>
-    )}
   </View>
 );
 
 // Componente QRCode para captura (sem bordas/padding extras)
-const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon }: any) => (
+const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors }: any) => (
   <View style={{
     width: size,
     height: size,
@@ -76,33 +59,18 @@ const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, lo
     alignItems: 'center',
     position: 'relative'
   }}>
-    <QRCode
+    <StyledQRCode
       value={value || 'https://example.com'}
       size={size - 20}
       backgroundColor={backgroundColor || '#FFFFFF'}
-      color={color || '#000000'}
-      ecl={errorCorrectionLevel || 'M'}
+      foregroundColor={'#000000'}
+      logoEnabled={logoEnabled}
+      logoSize={logoSize}
+      logoIcon={selectedIcon}
+      errorCorrectionLevel={errorCorrectionLevel || 'M'}
+      style={qrStyle}
+      gradientColors={gradientColors}
     />
-    {logoEnabled && (
-      <View style={{
-        position: 'absolute',
-        width: (size - 20) * logoSize,
-        height: (size - 20) * logoSize,
-        backgroundColor: backgroundColor || '#FFFFFF',
-        borderRadius: ((size - 20) * logoSize) / 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: backgroundColor || '#FFFFFF'
-      }}>
-        <Text style={{
-          fontSize: ((size - 20) * logoSize) * 0.6,
-          textAlign: 'center'
-        }}>
-          {selectedIcon}
-        </Text>
-      </View>
-    )}
   </View>
 );
 
@@ -119,7 +87,6 @@ const QR_TYPES = [
   { id: 'sms', label: 'SMS', icon: '💬' },
   { id: 'wifi', label: 'Wi-Fi', icon: '📶' },
   { id: 'contact', label: 'Contato', icon: '👤' },
-  { id: 'payment', label: 'Pagamento', icon: '💳' },
 ];
 
 const ERROR_CORRECTION_LEVELS = [
@@ -134,14 +101,29 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
   const [content, setContent] = useState('');
   const [selectedType, setSelectedType] = useState<QRCodeData['qr_type']>('text');
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
-  const [foregroundColor, setForegroundColor] = useState('#000000');
   const [logoEnabled, setLogoEnabled] = useState(false);
   const [logoSize, setLogoSize] = useState(0.2);
   const [selectedIcon, setSelectedIcon] = useState('❤️');
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
   const [showCustomization, setShowCustomization] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [qrStyle, setQrStyle] = useState<QRCodeStyle>('traditional');
+  const [gradientColors, setGradientColors] = useState(['#000000']);
   const previewRef = useRef<ViewShot>(null);
+  
+  // Estados para manter dados do último QR Code gerado (para compartilhamento)
+  const [lastGeneratedQR, setLastGeneratedQR] = useState<{
+    content: string;
+    title: string;
+    type: string;
+    style: QRCodeStyle;
+    backgroundColor: string;
+    logoEnabled: boolean;
+    logoSize: number;
+    errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+    selectedIcon: string;
+    gradientColors: string[];
+  } | null>(null);
 
   // Estados para formulários específicos
   const [wifiData, setWifiData] = useState({
@@ -160,12 +142,6 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
     url: ''
   });
 
-  const [paymentData, setPaymentData] = useState({
-    type: 'PIX',
-    key: '',
-    amount: '',
-    description: ''
-  });
 
   const formatContent = () => {
     switch (selectedType) {
@@ -183,11 +159,6 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
         return `WIFI:T:${wifiData.security};S:${wifiData.ssid};P:${wifiData.password};H:${wifiData.hidden ? 'true' : 'false'};;`;
       case 'contact':
         return `BEGIN:VCARD\nVERSION:3.0\nFN:${contactData.firstName} ${contactData.lastName}\nTEL:${contactData.phone}\nEMAIL:${contactData.email}\nORG:${contactData.organization}\nURL:${contactData.url}\nEND:VCARD`;
-      case 'payment':
-        if (paymentData.type === 'PIX') {
-          return `${paymentData.key}${paymentData.amount ? `|${paymentData.amount}` : ''}${paymentData.description ? `|${paymentData.description}` : ''}`;
-        }
-        return content;
       default:
         return content;
     }
@@ -215,10 +186,6 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
       return;
     }
 
-    if (selectedType === 'payment' && !paymentData.key) {
-      Alert.alert('Erro', 'Por favor, preencha a chave de pagamento');
-      return;
-    }
 
     try {
       setIsGenerating(true);
@@ -227,8 +194,10 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
         title,
         content: formatContent(),
         qr_type: selectedType,
+        qr_style: qrStyle,
         background_color: backgroundColor,
-        foreground_color: foregroundColor,
+        foreground_color: '#000000', // Valor padrão, será sobrescrito pela paleta
+        gradient_colors: gradientColors,
         logo_enabled: logoEnabled,
         logo_size: logoSize,
         logo_icon: selectedIcon,
@@ -236,6 +205,20 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
       };
 
       await insertQRCode(userEmail, qrData);
+
+      // Salvar dados do QR Code gerado para compartilhamento
+      setLastGeneratedQR({
+        content: formatContent(),
+        title: title,
+        type: selectedType,
+        style: qrStyle,
+        backgroundColor: backgroundColor,
+        logoEnabled: logoEnabled,
+        logoSize: logoSize,
+        errorCorrectionLevel: errorCorrectionLevel,
+        selectedIcon: selectedIcon,
+        gradientColors: gradientColors
+      });
 
       Alert.alert(
         'Sucesso!',
@@ -247,16 +230,27 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
             onPress: async () => {
               try {
                 if (previewRef.current) {
+                  // Aguardar um pouco para garantir renderização
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  
+                  console.log('Iniciando captura...');
+                  
                   const imageUri = await previewRef.current.capture();
+                  
+                  console.log('Captura realizada:', imageUri);
+                  
                   if (await Sharing.isAvailableAsync()) {
                     await Sharing.shareAsync(imageUri, {
                       mimeType: 'image/png',
-                      dialogTitle: `Compartilhar QR Code - ${title}`,
+                      dialogTitle: `Compartilhar QR Code - ${lastGeneratedQR?.title || 'QR Code'}`,
                     });
+                  } else {
+                    Alert.alert('Erro', 'Compartilhamento não está disponível neste dispositivo.');
                   }
                 }
               } catch (error) {
                 console.error('Erro ao compartilhar:', error);
+                Alert.alert('Erro', `Não foi possível compartilhar o QR Code: ${error.message}`);
               }
             }
           },
@@ -271,9 +265,10 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
       setSelectedIcon('❤️');
       setLogoEnabled(false);
       setLogoSize(0.2);
+      setQrStyle('traditional');
+      setGradientColors(['#000000']);
       setWifiData({ ssid: '', password: '', security: 'WPA', hidden: false });
       setContactData({ firstName: '', lastName: '', phone: '', email: '', organization: '', url: '' });
-      setPaymentData({ type: 'PIX', key: '', amount: '', description: '' });
 
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar o QR Code. Tente novamente.');
@@ -389,56 +384,6 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
           </View>
         );
 
-      case 'payment':
-        return (
-          <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Dados de Pagamento</Text>
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Tipo:</Text>
-              <View style={styles.pickerButtons}>
-                {['PIX', 'Bitcoin', 'Outro'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.pickerButton,
-                      paymentData.type === type && styles.pickerButtonActive
-                    ]}
-                    onPress={() => setPaymentData({ ...paymentData, type })}
-                  >
-                    <Text style={[
-                      styles.pickerButtonText,
-                      paymentData.type === type && styles.pickerButtonTextActive
-                    ]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder={paymentData.type === 'PIX' ? 'Chave PIX' : 'Endereço/Chave *'}
-              value={paymentData.key}
-              onChangeText={(text) => setPaymentData({ ...paymentData, key: text })}
-              placeholderTextColor="rgba(255,255,255,0.7)"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Valor (opcional)"
-              value={paymentData.amount}
-              onChangeText={(text) => setPaymentData({ ...paymentData, amount: text })}
-              keyboardType="numeric"
-              placeholderTextColor="rgba(255,255,255,0.7)"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Descrição (opcional)"
-              value={paymentData.description}
-              onChangeText={(text) => setPaymentData({ ...paymentData, description: text })}
-              placeholderTextColor="rgba(255,255,255,0.7)"
-            />
-          </View>
-        );
 
       default:
         return (
@@ -491,28 +436,39 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
               quality: 1.0,
               result: 'tmpfile',
             }}
-            style={{ opacity: 0, position: 'absolute', top: -1000 }}
+            style={{ 
+              position: 'absolute', 
+              top: -10000, 
+              left: -10000, 
+              width: 400, 
+              height: 400,
+              backgroundColor: '#FFFFFF'
+            }}
           >
             <QRCodeForCapture
-              value={formatContent() || 'Preview'}
-              size={200}
-              backgroundColor={backgroundColor}
-              color={foregroundColor}
-              logoEnabled={logoEnabled}
-              logoSize={logoSize}
-              errorCorrectionLevel={errorCorrectionLevel}
-              selectedIcon={selectedIcon}
+              value={lastGeneratedQR?.content || formatContent() || 'Preview'}
+              size={400}
+              backgroundColor={lastGeneratedQR?.backgroundColor || backgroundColor}
+              color={'#000000'}
+              logoEnabled={lastGeneratedQR?.logoEnabled || logoEnabled}
+              logoSize={lastGeneratedQR?.logoSize || logoSize}
+              errorCorrectionLevel={lastGeneratedQR?.errorCorrectionLevel || errorCorrectionLevel}
+              selectedIcon={lastGeneratedQR?.selectedIcon || selectedIcon}
+              qrStyle={lastGeneratedQR?.style || qrStyle}
+              gradientColors={lastGeneratedQR?.gradientColors || gradientColors}
             />
           </ViewShot>
           <QRCodeSVG
             value={formatContent() || 'Preview'}
             size={150}
             backgroundColor={backgroundColor}
-            color={foregroundColor}
+            color={'#000000'}
             logoEnabled={logoEnabled}
             logoSize={logoSize}
             errorCorrectionLevel={errorCorrectionLevel}
             selectedIcon={selectedIcon}
+            qrStyle={qrStyle}
+            gradientColors={gradientColors}
           />
         </View>
 
@@ -596,6 +552,255 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
               contentContainerStyle={{ flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
             >
+              {/* Estilo do QR Code */}
+              <View style={styles.customSection}>
+                <Text style={styles.customSectionTitle}>✨ Estilo do QR Code</Text>
+                
+                <View style={styles.styleGrid}>
+                  <TouchableOpacity
+                    style={[styles.styleOption, qrStyle === 'traditional' && styles.styleOptionActive]}
+                    onPress={() => setQrStyle('traditional')}
+                  >
+                    <View style={styles.stylePreview}>
+                      <View style={styles.traditionalPreview}>
+                        <View style={styles.traditionalSquare} />
+                      </View>
+                    </View>
+                    <Text style={[styles.styleLabel, qrStyle === 'traditional' && styles.styleLabelActive]}>
+                      Tradicional
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.styleOption, qrStyle === 'instagram' && styles.styleOptionActive]}
+                    onPress={() => setQrStyle('instagram')}
+                  >
+                    <View style={styles.stylePreview}>
+                      <View style={styles.instagramPreview}>
+                        <View style={styles.instagramDot} />
+                        <View style={styles.instagramDot} />
+                        <View style={styles.instagramDot} />
+                        <View style={styles.instagramDot} />
+                      </View>
+                    </View>
+                    <Text style={[styles.styleLabel, qrStyle === 'instagram' && styles.styleLabelActive]}>
+                      Instagram
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.styleOption, qrStyle === 'dots' && styles.styleOptionActive]}
+                    onPress={() => setQrStyle('dots')}
+                  >
+                    <View style={styles.stylePreview}>
+                      <View style={styles.dotsPreview}>
+                        <View style={styles.dotStyle} />
+                        <View style={styles.dotStyle} />
+                        <View style={styles.dotStyle} />
+                        <View style={styles.dotStyle} />
+                      </View>
+                    </View>
+                    <Text style={[styles.styleLabel, qrStyle === 'dots' && styles.styleLabelActive]}>
+                      Pontos
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.styleOption, qrStyle === 'rounded' && styles.styleOptionActive]}
+                    onPress={() => setQrStyle('rounded')}
+                  >
+                    <View style={styles.stylePreview}>
+                      <View style={styles.roundedPreview}>
+                        <View style={styles.roundedSquare} />
+                      </View>
+                    </View>
+                    <Text style={[styles.styleLabel, qrStyle === 'rounded' && styles.styleLabelActive]}>
+                      Arredondado
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {(qrStyle === 'instagram' || qrStyle === 'rounded' || qrStyle === 'traditional' || qrStyle === 'dots') && (
+                  <View style={styles.gradientSection}>
+                    <Text style={styles.gradientLabel}>
+                      Paleta de Cores
+                    </Text>
+                    <View style={styles.gradientPresets}>
+                      {/* Cores Sólidas */}
+                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 10, marginBottom: 5 }]}>Cores Sólidas</Text>
+                      
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#000000'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#000000' }]} />
+                        <Text style={styles.gradientPresetLabel}>Preto</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#1E3A8A'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#1E3A8A' }]} />
+                        <Text style={styles.gradientPresetLabel}>Azul</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#059669'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#059669' }]} />
+                        <Text style={styles.gradientPresetLabel}>Verde</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#DC2626'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#DC2626' }]} />
+                        <Text style={styles.gradientPresetLabel}>Vermelho</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#7C3AED'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#7C3AED' }]} />
+                        <Text style={styles.gradientPresetLabel}>Roxo</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#EA580C'])}
+                      >
+                        <View style={[styles.gradientPresetColor, { backgroundColor: '#EA580C' }]} />
+                        <Text style={styles.gradientPresetLabel}>Laranja</Text>
+                      </TouchableOpacity>
+
+                      {/* Gradientes */}
+                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 15, marginBottom: 5 }]}>Gradientes</Text>
+                      
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#F58529', '#DD2A7B', '#8134AF', '#515BD4'])}
+                      >
+                        <LinearGradient
+                          colors={['#F58529', '#DD2A7B', '#8134AF', '#515BD4']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Instagram</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#667eea', '#764ba2'])}
+                      >
+                        <LinearGradient
+                          colors={['#667eea', '#764ba2']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Oceano</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#11998e', '#38ef7d'])}
+                      >
+                        <LinearGradient
+                          colors={['#11998e', '#38ef7d']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Menta</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#fc466b', '#3f5efb'])}
+                      >
+                        <LinearGradient
+                          colors={['#fc466b', '#3f5efb']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Vibrante</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#ff9a9e', '#fecfef'])}
+                      >
+                        <LinearGradient
+                          colors={['#ff9a9e', '#fecfef']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Rosa</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#a8edea', '#fed6e3'])}
+                      >
+                        <LinearGradient
+                          colors={['#a8edea', '#fed6e3']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Suave</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#ffecd2', '#fcb69f'])}
+                      >
+                        <LinearGradient
+                          colors={['#ffecd2', '#fcb69f']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Pêssego</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#434343', '#000000'])}
+                      >
+                        <LinearGradient
+                          colors={['#434343', '#000000']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Dark</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.gradientPreset}
+                        onPress={() => setGradientColors(['#eecda3', '#ef629f'])}
+                      >
+                        <LinearGradient
+                          colors={['#eecda3', '#ef629f']}
+                          style={styles.gradientPresetColor}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        />
+                        <Text style={styles.gradientPresetLabel}>Dourado</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+
               {/* Cores */}
               <View style={styles.customSection}>
                 <Text style={styles.customSectionTitle}>🎨 Cores</Text>
@@ -623,28 +828,6 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
                   </ScrollView>
                 </View>
 
-                <View style={styles.colorRow}>
-                  <Text style={styles.colorLabel}>QR Code:</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScrollView}>
-                    <View style={styles.colorOptions}>
-                      {['#000000', '#1976D2', '#388E3C', '#F57C00', '#D32F2F', '#7B1FA2', '#795548', '#607D8B'].map((color) => (
-                        <TouchableOpacity
-                          key={color}
-                          style={[
-                            styles.colorOption,
-                            { backgroundColor: color },
-                            foregroundColor === color && styles.colorOptionSelected
-                          ]}
-                          onPress={() => setForegroundColor(color)}
-                        >
-                          {foregroundColor === color && (
-                            <Text style={styles.colorSelectedIcon}>✓</Text>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
               </View>
 
               {/* Logo */}
@@ -772,3 +955,4 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
     </LinearGradient>
   );
 }
+

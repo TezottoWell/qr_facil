@@ -17,14 +17,17 @@ import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { styles } from './styles';
 import { getUserQRCodes, deleteQRCode } from '../../services/database';
+import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
 
 interface QRCodeItem {
   id: number;
   title: string;
   content: string;
   qr_type: string;
+  qr_style?: string;
   background_color: string;
   foreground_color: string;
+  gradient_colors?: string;
   logo_enabled: number;
   logo_size: number;
   logo_icon?: string;
@@ -39,48 +42,39 @@ interface MyQRCodesScreenProps {
 }
 
 // Componente QRCode real
-const QRCodePreview = ({ item, size = 80 }: { item: QRCodeItem; size?: number }) => (
-  <View style={[
-    styles.qrCodePreview,
-    { 
-      width: size, 
-      height: size,
-      backgroundColor: item.background_color,
-      padding: 5,
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative'
-    }
-  ]}>
-    <QRCode
-      value={item.content || 'https://example.com'}
-      size={size - 10}
-      backgroundColor={item.background_color}
-      color={item.foreground_color}
-      ecl={item.error_correction_level || 'M'}
-    />
-    {item.logo_enabled === 1 && (
-      <View style={{
-        position: 'absolute',
-        width: (size - 10) * item.logo_size,
-        height: (size - 10) * item.logo_size,
+const QRCodePreview = ({ item, size = 80 }: { item: QRCodeItem; size?: number }) => {
+  const gradientColors = item.gradient_colors 
+    ? JSON.parse(item.gradient_colors) 
+    : ['#F58529', '#DD2A7B', '#8134AF', '#515BD4'];
+
+  return (
+    <View style={[
+      styles.qrCodePreview,
+      { 
+        width: size, 
+        height: size,
         backgroundColor: item.background_color,
-        borderRadius: ((size - 10) * item.logo_size) / 2,
+        padding: 5,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: item.background_color,
-      }}>
-        <Text style={{
-          fontSize: ((size - 10) * item.logo_size) * 0.6,
-          textAlign: 'center',
-        }}>
-          {item.logo_icon || '❤️'}
-        </Text>
-      </View>
-    )}
-  </View>
-);
+        position: 'relative'
+      }
+    ]}>
+      <StyledQRCode
+        value={item.content || 'https://example.com'}
+        size={size - 10}
+        backgroundColor={item.background_color}
+        foregroundColor={item.foreground_color}
+        logoEnabled={item.logo_enabled === 1}
+        logoSize={item.logo_size}
+        logoIcon={item.logo_icon}
+        errorCorrectionLevel={item.error_correction_level as 'L' | 'M' | 'Q' | 'H'}
+        style={(item.qr_style as QRCodeStyle) || 'traditional'}
+        gradientColors={gradientColors}
+      />
+    </View>
+  );
+};
 
 const QR_TYPE_LABELS: { [key: string]: { label: string; icon: string } } = {
   'text': { label: 'Texto', icon: '📝' },
@@ -90,50 +84,40 @@ const QR_TYPE_LABELS: { [key: string]: { label: string; icon: string } } = {
   'sms': { label: 'SMS', icon: '💬' },
   'wifi': { label: 'Wi-Fi', icon: '📶' },
   'contact': { label: 'Contato', icon: '👤' },
-  'payment': { label: 'Pagamento', icon: '💳' },
 };
 
 // Componente QRCode para captura de imagem
-const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: number }) => (
-  <View style={{
-    width: size,
-    height: size,
-    backgroundColor: item.background_color,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    position: 'relative',
-  }}>
-    <QRCode
-      value={item.content || 'https://example.com'}
-      size={size - 40}
-      backgroundColor={item.background_color}
-      color={item.foreground_color}
-      ecl={item.error_correction_level || 'M'}
-    />
-    {item.logo_enabled === 1 && (
-      <View style={{
-        position: 'absolute',
-        width: (size - 40) * item.logo_size,
-        height: (size - 40) * item.logo_size,
-        backgroundColor: item.background_color,
-        borderRadius: ((size - 40) * item.logo_size) / 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: item.background_color,
-      }}>
-        <Text style={{
-          fontSize: ((size - 40) * item.logo_size) * 0.6,
-          textAlign: 'center',
-        }}>
-          {item.logo_icon || '❤️'}
-        </Text>
-      </View>
-    )}
-  </View>
-);
+const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: number }) => {
+  const gradientColors = item.gradient_colors 
+    ? JSON.parse(item.gradient_colors) 
+    : ['#F58529', '#DD2A7B', '#8134AF', '#515BD4'];
+
+  return (
+    <View style={{
+      width: size,
+      height: size,
+      backgroundColor: item.background_color,
+      padding: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 10,
+      position: 'relative',
+    }}>
+      <StyledQRCode
+        value={item.content || 'https://example.com'}
+        size={size - 40}
+        backgroundColor={item.background_color}
+        foregroundColor={item.foreground_color}
+        logoEnabled={item.logo_enabled === 1}
+        logoSize={item.logo_size}
+        logoIcon={item.logo_icon}
+        errorCorrectionLevel={item.error_correction_level as 'L' | 'M' | 'Q' | 'H'}
+        style={(item.qr_style as QRCodeStyle) || 'traditional'}
+        gradientColors={gradientColors}
+      />
+    </View>
+  );
+};
 
 export default function MyQRCodesScreen({ handleBack, userEmail = 'test@example.com' }: MyQRCodesScreenProps) {
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);

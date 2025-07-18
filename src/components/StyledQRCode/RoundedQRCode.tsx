@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
-import Svg, { Path, Circle, Rect, G, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Rect, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 const qrcode = require('qrcode-generator');
 
-interface InstagramQRCodeProps {
+interface RoundedQRCodeProps {
   value: string;
   size?: number;
   backgroundColor?: string;
@@ -15,7 +15,6 @@ interface InstagramQRCodeProps {
 
 // Função para gerar matriz QR real usando qrcode-generator
 const generateQRMatrix = (text: string, errorLevel: string): boolean[][] => {
-  // Mapear níveis de correção de erro
   const errorLevelMap: Record<string, string> = {
     'L': 'L',
     'M': 'M',
@@ -23,12 +22,10 @@ const generateQRMatrix = (text: string, errorLevel: string): boolean[][] => {
     'H': 'H'
   };
 
-  // Criar QR Code
   const qr = qrcode(0, errorLevelMap[errorLevel] || 'M');
   qr.addData(text);
   qr.make();
   
-  // Converter para matriz de boolean
   const moduleCount = qr.getModuleCount();
   const matrix: boolean[][] = Array(moduleCount).fill(null).map(() => Array(moduleCount).fill(false));
   
@@ -49,46 +46,48 @@ const isInFinderPattern = (row: number, col: number, size: number): boolean => {
   );
 };
 
-const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
+const RoundedQRCode: React.FC<RoundedQRCodeProps> = ({
   value,
   size = 200,
   backgroundColor = '#FFFFFF',
   foregroundColor = '#000000',
-  gradientColors = ['#F58529', '#DD2A7B', '#8134AF', '#515BD4'],
+  gradientColors,
   errorCorrectionLevel = 'M',
   style
 }) => {
   const matrix = generateQRMatrix(value, errorCorrectionLevel);
   const matrixSize = matrix.length;
-  const quietZone = 4; // Margem padrão para QR Codes (4 módulos)
+  const quietZone = 4;
   const availableSize = size - (2 * quietZone);
   const cellSize = availableSize / matrixSize;
-  const dotSize = cellSize * 0.8; // Aumentar o tamanho dos pontos para melhor legibilidade
-  const cornerRadius = dotSize / 2;
-  const offset = quietZone; // Deslocamento para centralizar o QR Code
-  
-  // Renderizar os pontos do QR Code (exceto padrões de canto)
-  const renderDots = () => {
+  const offset = quietZone;
+
+  // Renderizar os pontos do QR Code com cantos arredondados
+  const renderRoundedDots = () => {
     const dots: JSX.Element[] = [];
     
     for (let row = 0; row < matrixSize; row++) {
       for (let col = 0; col < matrixSize; col++) {
         if (matrix[row][col] && !isInFinderPattern(row, col, matrixSize)) {
-          const x = col * cellSize + cellSize / 2 + offset;
-          const y = row * cellSize + cellSize / 2 + offset;
+          const x = col * cellSize + offset;
+          const y = row * cellSize + offset;
           
-          // Desenhar círculos para pontos normais
           const fillColor = gradientColors && gradientColors.length > 1 
-            ? "url(#instagramGradient)" 
+            ? "url(#roundedGradient)" 
             : gradientColors && gradientColors.length === 1 
               ? gradientColors[0] 
               : foregroundColor;
+          
+          // Desenhar retângulos arredondados para pontos normais
           dots.push(
-            <Circle
+            <Rect
               key={`${row}-${col}`}
-              cx={x}
-              cy={y}
-              r={dotSize / 2}
+              x={x}
+              y={y}
+              width={cellSize}
+              height={cellSize}
+              rx={cellSize * 0.3} // 30% de arredondamento
+              ry={cellSize * 0.3}
               fill={fillColor}
             />
           );
@@ -98,9 +97,9 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
     
     return dots;
   };
-  
-  // Renderizar os padrões de canto customizados (estilo Instagram)
-  const renderFinderPatterns = () => {
+
+  // Renderizar os padrões de canto arredondados
+  const renderRoundedFinderPatterns = () => {
     const patterns = [
       { x: 0, y: 0 },
       { x: matrixSize - 7, y: 0 },
@@ -112,7 +111,7 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
       const startY = pattern.y * cellSize + offset;
       const patternSize = 7 * cellSize;
       const fillColor = gradientColors && gradientColors.length > 1 
-        ? "url(#instagramGradient)" 
+        ? "url(#roundedGradient)" 
         : gradientColors && gradientColors.length === 1 
           ? gradientColors[0] 
           : foregroundColor;
@@ -125,8 +124,8 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
             y={startY}
             width={patternSize}
             height={patternSize}
-            rx={patternSize * 0.15}
-            ry={patternSize * 0.15}
+            rx={patternSize * 0.25}
+            ry={patternSize * 0.25}
             fill={fillColor}
           />
           {/* Anel interno vazio (5x5) */}
@@ -135,8 +134,8 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
             y={startY + cellSize}
             width={5 * cellSize}
             height={5 * cellSize}
-            rx={3 * cellSize * 0.15}
-            ry={3 * cellSize * 0.15}
+            rx={3 * cellSize * 0.25}
+            ry={3 * cellSize * 0.25}
             fill={backgroundColor}
           />
           {/* Centro sólido (3x3) */}
@@ -145,8 +144,8 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
             y={startY + 2 * cellSize}
             width={3 * cellSize}
             height={3 * cellSize}
-            rx={1.5 * cellSize * 0.15}
-            ry={1.5 * cellSize * 0.15}
+            rx={1.5 * cellSize * 0.25}
+            ry={1.5 * cellSize * 0.25}
             fill={fillColor}
           />
         </G>
@@ -158,28 +157,30 @@ const InstagramQRCode: React.FC<InstagramQRCodeProps> = ({
     <View style={[{ width: size, height: size, backgroundColor }, style]}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Defs>
-          <LinearGradient id="instagramGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            {gradientColors.map((color, index) => (
+          <LinearGradient id="roundedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            {gradientColors ? gradientColors.map((color, index) => (
               <Stop
                 key={index}
                 offset={`${(index / (gradientColors.length - 1)) * 100}%`}
                 stopColor={color}
               />
-            ))}
+            )) : (
+              <Stop offset="0%" stopColor={foregroundColor} />
+            )}
           </LinearGradient>
         </Defs>
         
         {/* Fundo */}
         <Rect x="0" y="0" width={size} height={size} fill={backgroundColor} />
         
-        {/* Renderizar pontos */}
-        {renderDots()}
+        {/* Renderizar pontos arredondados */}
+        {renderRoundedDots()}
         
-        {/* Sobrescrever com padrões de canto customizados */}
-        {renderFinderPatterns()}
+        {/* Renderizar padrões de canto arredondados */}
+        {renderRoundedFinderPatterns()}
       </Svg>
     </View>
   );
 };
 
-export default InstagramQRCode;
+export default RoundedQRCode;

@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 
 // Abrir/criar o banco de dados usando a nova API
 const openDatabase = async () => {
-  return await SQLite.openDatabaseAsync('qrfacil_v2.db'); // Nova versão para limpar cache
+  return await SQLite.openDatabaseAsync('qrfacil_v3.db'); // Nova versão para incluir novos campos
 };
 
 export const initDatabase = async () => {
@@ -28,8 +28,10 @@ export const initDatabase = async () => {
         title TEXT NOT NULL,
         content TEXT NOT NULL,
         qr_type TEXT NOT NULL,
+        qr_style TEXT DEFAULT 'traditional',
         background_color TEXT DEFAULT '#FFFFFF',
         foreground_color TEXT DEFAULT '#000000',
+        gradient_colors TEXT DEFAULT '["#F58529","#DD2A7B","#8134AF","#515BD4"]',
         logo_enabled INTEGER DEFAULT 0,
         logo_size REAL DEFAULT 0.2,
         logo_icon TEXT DEFAULT '❤️',
@@ -103,9 +105,11 @@ export const getAllUsers = async () => {
 export interface QRCodeData {
   title: string;
   content: string;
-  qr_type: 'text' | 'url' | 'email' | 'phone' | 'sms' | 'wifi' | 'contact' | 'payment';
+  qr_type: 'text' | 'url' | 'email' | 'phone' | 'sms' | 'wifi' | 'contact';
+  qr_style?: 'traditional' | 'instagram' | 'dots' | 'rounded';
   background_color?: string;
   foreground_color?: string;
+  gradient_colors?: string[];
   logo_enabled?: boolean;
   logo_size?: number;
   logo_icon?: string;
@@ -118,15 +122,17 @@ export const insertQRCode = async (userEmail: string, qrData: QRCodeData) => {
     
     const result = await db.runAsync(
       `INSERT INTO qr_codes 
-       (user_email, title, content, qr_type, background_color, foreground_color, logo_enabled, logo_size, logo_icon, error_correction_level) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_email, title, content, qr_type, qr_style, background_color, foreground_color, gradient_colors, logo_enabled, logo_size, logo_icon, error_correction_level) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userEmail,
         qrData.title,
         qrData.content,
         qrData.qr_type,
+        qrData.qr_style || 'traditional',
         qrData.background_color || '#FFFFFF',
         qrData.foreground_color || '#000000',
+        JSON.stringify(qrData.gradient_colors || ['#F58529', '#DD2A7B', '#8134AF', '#515BD4']),
         qrData.logo_enabled ? 1 : 0,
         qrData.logo_size || 0.2,
         qrData.logo_icon || '❤️',
