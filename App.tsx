@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Alert,
+  SafeAreaView,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   GoogleSignin,
   statusCodes,
@@ -135,7 +137,8 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <NavigationContainer>
         <AppNavigator 
           isSignedIn={isSignedIn}
@@ -145,6 +148,6 @@ export default function App() {
           handleSignOut={handleSignOut}
         />
       </NavigationContainer>
-    </SafeAreaProvider>
+    </>
   );
 }

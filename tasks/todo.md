@@ -1,57 +1,183 @@
-# Plano para Remoção do Card de "Pagamento"
+# Documentação Atualizada: react-native-safe-area-context com Expo SDK 53
 
-## Análise das Referências Encontradas
+## Análise da Documentação Oficial
 
-Encontrei as seguintes referências ao termo "Pagamento" no código:
+Baseado na pesquisa da documentação oficial mais recente (2025), aqui estão os principais pontos sobre `react-native-safe-area-context` com Expo SDK 53:
 
-### 1. `/src/screens/NewQRCode/index.tsx`
-- **Linha 90**: Definição do tipo no array de tipos de QR Code
-- **Linha 133**: Estado `paymentData` para dados de pagamento
-- **Linha 156-158**: Lógica de geração de conteúdo para QR de pagamento
-- **Linha 172**: Validação que exclui payment da validação de conteúdo
-- **Linha 188-189**: Validação específica para chave de pagamento
-- **Linha 250**: Reset dos dados de pagamento
-- **Linha 366-411**: Interface completa para entrada de dados de pagamento
-- **Linha 369**: Título "Dados de Pagamento"
+## 1. Instalação
 
-### 2. `/src/screens/MyQRCodes/index.tsx`
-- **Linha 87**: Definição do tipo no mapeamento de tipos
+### Método Recomendado
+```bash
+npx expo install react-native-safe-area-context
+```
 
-### 3. `/src/services/database.ts`
-- **Linha 108**: Tipo 'payment' na interface QRCodeData
+### Instalação Automática com Expo Router
+- Se você criou um projeto usando o template padrão do Expo Router, esta biblioteca já está instalada como dependência
+- Não é necessário instalar manualmente se estiver usando Expo Router
 
-## Tarefas para Remoção
+### Versão Atual
+- Versão mais recente: 5.5.2 (publicada em 10 de julho de 2025)
+- Compatível com Expo SDK 53
 
-### ✅ Tarefa 1: Analisar estrutura atual do código
-- [x] Identificar todas as referências ao "Pagamento"
-- [x] Mapear dependências e impactos
+## 2. Configuração
 
-### ⏳ Tarefa 2: Remover tipo payment do array de tipos em NewQRCode
-- [ ] Remover entrada `{ id: 'payment', label: 'Pagamento', icon: '💳' }` do array QR_TYPES
+### Configuração Básica - SafeAreaProvider
+```javascript
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-### ⏳ Tarefa 3: Remover estado e lógica de pagamento em NewQRCode
-- [ ] Remover estado `paymentData` e função `setPaymentData`
-- [ ] Remover case 'payment' da função `generateQRContent`
-- [ ] Remover validação específica de payment da função `handleGenerate`
-- [ ] Remover reset de paymentData da função `resetForm`
-- [ ] Remover interface de entrada de dados de pagamento (case 'payment' no renderForm)
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      {/* Conteúdo do seu app */}
+    </SafeAreaProvider>
+  );
+}
+```
 
-### ⏳ Tarefa 4: Remover tipo payment do mapeamento em MyQRCodes
-- [ ] Remover entrada `'payment': { label: 'Pagamento', icon: '💳' }` do objeto typeLabels
+### Opções de Uso
 
-### ⏳ Tarefa 5: Atualizar interface de tipos no database.ts
-- [ ] Remover 'payment' da union type em qr_type
+**1. Componente SafeAreaView**
+```javascript
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-### ⏳ Tarefa 6: Teste da funcionalidade
-- [ ] Verificar se a remoção não quebrou outras funcionalidades
-- [ ] Confirmar que não há mais referências ao tipo payment
+function Screen() {
+  return (
+    <SafeAreaView>
+      {/* Conteúdo da tela */}
+    </SafeAreaView>
+  );
+}
+```
 
-## Observações Importantes
+**2. Hook useSafeAreaInsets**
+```javascript
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-- As mudanças são relativamente simples e isoladas
-- Não há dependências complexas entre os componentes
-- A remoção não deve afetar outros tipos de QR Code
-- Todas as referências estão bem localizadas nos arquivos identificados
+function Component() {
+  const insets = useSafeAreaInsets();
+  
+  return (
+    <View style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+      {/* Conteúdo */}
+    </View>
+  );
+}
+```
+
+## 3. Problemas Comuns e Soluções
+
+### Erro "No component found for view with name 'RNCSafeAreaProvider'"
+
+**Principais Causas:**
+1. Versões incompatíveis entre Expo SDK e react-native-safe-area-context
+2. Problemas de cache ou instalação
+
+**Soluções:**
+
+**1. Reinstalar com Versão Compatível**
+```bash
+npx expo install react-native-safe-area-context
+```
+
+**2. Limpar Cache**
+```bash
+npx expo start --clear
+```
+
+**3. Para React Navigation**
+Se estiver usando React Navigation, instale todas as dependências necessárias:
+```bash
+npx expo install react-native-reanimated react-native-gesture-handler react-native-screens react-native-safe-area-context
+```
+
+### Problema Específico do Expo SDK 53 no Android
+
+**Issue Identificado:**
+- SafeAreaView quebra no Expo Go para Android após upgrade para SDK 53
+- Problema conhecido e sendo corrigido pela equipe do Expo
+
+**Soluções Temporárias:**
+1. Baixar a versão mais recente do Expo Go APK diretamente de https://expo.dev/go
+2. Usar o SafeAreaView padrão do React Native como workaround:
+```javascript
+import { SafeAreaView } from 'react-native';
+```
+
+## 4. Mudanças Importantes no SDK 53
+
+### New Architecture
+- Expo SDK 53 inclui React Native 0.79
+- New Architecture está habilitada por padrão em todos os projetos SDK 53
+- A biblioteca react-native-safe-area-context é compatível com New Architecture
+
+### Plugins Não São Mais Necessários
+- **NÃO** é necessário adicionar plugins no `app.json` ou `expo.json`
+- A biblioteca funciona out-of-the-box com o Expo SDK 53
+- Se você tem plugins configurados de versões anteriores, pode removê-los
+
+### Configuração Simplificada
+```json
+// app.json - NÃO é necessário adicionar plugins
+{
+  "expo": {
+    "name": "Seu App",
+    // ... outras configurações
+    // NÃO inclua plugins para react-native-safe-area-context
+  }
+}
+```
+
+## 5. Diferenças das Versões Anteriores
+
+### Versões Antigas (< 4.0)
+- Exigiam configuração manual de plugins
+- Problemas de compatibilidade frequentes
+- Configuração mais complexa
+
+### Versão Atual (5.5.2)
+- Instalação simplificada com `npx expo install`
+- Compatibilidade automática com Expo SDK
+- Sem necessidade de plugins
+- Melhor suporte para New Architecture
+
+## 6. Plataformas Suportadas
+
+- ✅ Android
+- ✅ iOS  
+- ✅ tvOS
+- ✅ Web
+- ✅ macOS
+- ✅ Windows
+
+## 7. Boas Práticas
+
+### 1. Use Sempre o SafeAreaProvider
+```javascript
+// App.tsx
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      {/* Navegação e conteúdo */}
+    </SafeAreaProvider>
+  );
+}
+```
+
+### 2. Para Modais e Rotas com react-native-screens
+Adicione SafeAreaProvider também em modais e rotas quando necessário.
+
+### 3. Verificação de Compatibilidade
+Sempre use `npx expo install` em vez de `npm install` para garantir compatibilidade com sua versão do Expo SDK.
 
 ## Revisão
-(Seção a ser preenchida após a conclusão das tarefas)
+
+Esta documentação foi compilada em julho de 2025 baseada na versão mais recente do react-native-safe-area-context (5.5.2) e Expo SDK 53. As principais mudanças incluem:
+
+- Eliminação da necessidade de plugins
+- Instalação simplificada
+- Melhor compatibilidade com New Architecture
+- Soluções para problemas específicos do Android no SDK 53
+
+A biblioteca evoluiu significativamente, tornando-se mais simples de configurar e usar com o Expo SDK 53.

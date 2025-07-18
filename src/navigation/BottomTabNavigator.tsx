@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import WelcomeScreen from '../screens/Welcome';
@@ -37,48 +37,26 @@ export default function BottomTabNavigator({ user, handleSignOut }: BottomTabNav
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
         tabBarStyle: {
           backgroundColor: 'rgba(0, 0, 0, 0.95)',
-          borderTopWidth: 1,
-          borderTopColor: 'rgba(255, 255, 255, 0.1)',
+          borderTopWidth: 0,
           borderTopLeftRadius: 25,
           borderTopRightRadius: 25,
           paddingTop: 12,
-          paddingBottom: 12,
-          height: 75,
-          position: 'absolute',
-          marginHorizontal: 15,
-          marginBottom: 15,
+          paddingBottom: Platform.OS === 'ios' ? 25 : 12,
+          height: Platform.OS === 'ios' ? 88 : 75,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -6 },
           shadowOpacity: 0.4,
           shadowRadius: 12,
           elevation: 10,
+          overflow: 'hidden',
+          position:'absolute'
         },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
           marginTop: 5,
         },
-        headerStyle: {
-          backgroundColor: 'transparent',
-          borderBottomWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTintColor: '#ffffff',
-        headerTitleStyle: {
-          fontSize: 20,
-          fontWeight: '700',
-          color: '#ffffff',
-        },
-        headerTitleAlign: 'center',
-        headerBackground: () => (
-          <View style={{
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            borderBottomLeftRadius: 25,
-            borderBottomRightRadius: 25,
-          }} />
-        ),
+        headerShown: false,
       })}
     >
       <Tab.Screen 
