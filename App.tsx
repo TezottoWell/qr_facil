@@ -3,6 +3,7 @@ import {
   Alert,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   GoogleSignin,
   statusCodes,
@@ -134,14 +135,16 @@ export default function App() {
   };
 
   return (
-    <NavigationContainer>
-      <AppNavigator 
-        isSignedIn={isSignedIn}
-        user={user}
-        isLoading={isLoading}
-        handleGoogleSignIn={handleGoogleSignIn}
-        handleSignOut={handleSignOut}
-      />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigator 
+          isSignedIn={isSignedIn}
+          user={user}
+          isLoading={isLoading}
+          handleGoogleSignIn={handleGoogleSignIn}
+          handleSignOut={handleSignOut}
+        />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
