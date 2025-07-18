@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Alert,
 } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import {
   GoogleSignin,
   statusCodes,
@@ -9,10 +10,7 @@ import {
   isErrorWithCode,
   User,
 } from '@react-native-google-signin/google-signin';
-import LoginScreen from './src/screens/Login';
-import WelcomeScreen from './src/screens/Welcome';
-import MyQRCodesScreen from './src/screens/MyQRCodes';
-import NewQRCodeScreen from './src/screens/NewQRCode';
+import AppNavigator from './src/navigation/AppNavigator';
 import { initDatabase, insertUser } from './src/services/database';
 
 // Configuração do Google Sign-In
@@ -24,14 +22,11 @@ GoogleSignin.configure({
   forceCodeForRefreshToken: true,
 });
 
-type Screen = 'Login' | 'Welcome' | 'MyQRCodes' | 'NewQRCode';
-
 export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('Login');
 
   useEffect(() => {
     initializeApp();
@@ -58,7 +53,6 @@ export default function App() {
         if (isSuccessResponse(userInfo)) {
           setUser(userInfo.data.user);
           setIsSignedIn(true);
-          setCurrentScreen('Welcome');
         }
       }
     } catch (error) {
@@ -83,7 +77,6 @@ export default function App() {
         console.log('Login successful:', response.data);
         setUser(response.data.user);
         setIsSignedIn(true);
-        setCurrentScreen('Welcome');
 
         // Inserir usuário no banco de dados usando a nova API
         try {
@@ -133,30 +126,22 @@ export default function App() {
       await GoogleSignin.signOut();
       setUser(null);
       setIsSignedIn(false);
-      setCurrentScreen('Login');
       Alert.alert('Sucesso', 'Logout realizado com sucesso!');
     } catch (error) {
       console.log('Erro no logout:', error);
       Alert.alert('Erro', 'Erro ao fazer logout');
     }
   };
-  
-  const handleMyQRCodes = () => setCurrentScreen('MyQRCodes');
-  const handleNewQRCode = () => setCurrentScreen('NewQRCode');
-  const handleBack = () => setCurrentScreen('Welcome');
 
-  if (currentScreen === 'Welcome' && isSignedIn && user) {
-    return <WelcomeScreen user={user} handleSignOut={handleSignOut} handleMyQRCodes={handleMyQRCodes} handleNewQRCode={handleNewQRCode} />;
-  }
-
-  if (currentScreen === 'MyQRCodes') {
-    return <MyQRCodesScreen handleBack={handleBack} userEmail={user?.email} />;
-  }
-  
-  if (currentScreen === 'NewQRCode') {
-    return <NewQRCodeScreen handleBack={handleBack} userEmail={user?.email} />;
-  }
-
-
-  return <LoginScreen isLoading={isLoading} handleGoogleSignIn={handleGoogleSignIn} />;
+  return (
+    <NavigationContainer>
+      <AppNavigator 
+        isSignedIn={isSignedIn}
+        user={user}
+        isLoading={isLoading}
+        handleGoogleSignIn={handleGoogleSignIn}
+        handleSignOut={handleSignOut}
+      />
+    </NavigationContainer>
+  );
 }

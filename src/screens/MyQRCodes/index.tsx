@@ -11,6 +11,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
@@ -37,7 +38,6 @@ interface QRCodeItem {
 }
 
 interface MyQRCodesScreenProps {
-  handleBack: () => void;
   userEmail?: string;
 }
 
@@ -119,7 +119,8 @@ const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: numbe
   );
 };
 
-export default function MyQRCodesScreen({ handleBack, userEmail = 'test@example.com' }: MyQRCodesScreenProps) {
+export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQRCodesScreenProps) {
+  const navigation = useNavigation();
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -277,7 +278,7 @@ export default function MyQRCodesScreen({ handleBack, userEmail = 'test@example.
     <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home' as never)}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Meus QR Codes</Text>

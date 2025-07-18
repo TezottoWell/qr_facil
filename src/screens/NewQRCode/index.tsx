@@ -11,17 +11,20 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as ImagePicker from 'expo-image-picker';
 import { styles } from './styles';
 import { insertQRCode, QRCodeData } from '../../services/database';
 import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
 
 // Componente QRCode real com estilos
-const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors }: any) => (
+const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors, customLogoUri, logoType }: any) => (
   <View style={[
     styles.qrPreview,
     { 
@@ -42,6 +45,8 @@ const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize,
       logoEnabled={logoEnabled}
       logoSize={logoSize}
       logoIcon={selectedIcon}
+      customLogoUri={customLogoUri}
+      logoType={logoType}
       errorCorrectionLevel={errorCorrectionLevel || 'M'}
       style={qrStyle}
       gradientColors={gradientColors}
@@ -50,7 +55,7 @@ const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize,
 );
 
 // Componente QRCode para captura (sem bordas/padding extras)
-const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors }: any) => (
+const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors, customLogoUri, logoType }: any) => (
   <View style={{
     width: size,
     height: size,
@@ -67,6 +72,8 @@ const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, lo
       logoEnabled={logoEnabled}
       logoSize={logoSize}
       logoIcon={selectedIcon}
+      customLogoUri={customLogoUri}
+      logoType={logoType}
       errorCorrectionLevel={errorCorrectionLevel || 'M'}
       style={qrStyle}
       gradientColors={gradientColors}
@@ -75,7 +82,6 @@ const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, lo
 );
 
 interface NewQRCodeScreenProps {
-  handleBack: () => void;
   userEmail?: string;
 }
 
@@ -96,7 +102,8 @@ const ERROR_CORRECTION_LEVELS = [
   { id: 'H', label: 'Máximo (30%)', description: 'Máxima resistência' },
 ];
 
-export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.com' }: NewQRCodeScreenProps) {
+export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQRCodeScreenProps) {
+  const navigation = useNavigation();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedType, setSelectedType] = useState<QRCodeData['qr_type']>('text');
@@ -104,6 +111,8 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
   const [logoEnabled, setLogoEnabled] = useState(false);
   const [logoSize, setLogoSize] = useState(0.2);
   const [selectedIcon, setSelectedIcon] = useState('❤️');
+  const [customLogoUri, setCustomLogoUri] = useState<string | null>(null);
+  const [logoType, setLogoType] = useState<'icon' | 'image'>('icon');
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
   const [showCustomization, setShowCustomization] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -122,8 +131,36 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
     logoSize: number;
     errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
     selectedIcon: string;
+    customLogoUri: string | null;
+    logoType: 'icon' | 'image';
     gradientColors: string[];
   } | null>(null);
+
+  // Função para selecionar imagem
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão necessária', 'Precisamos de permissão para acessar suas fotos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setCustomLogoUri(result.assets[0].uri);
+        setLogoType('image');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+    }
+  };
 
   // Estados para formulários específicos
   const [wifiData, setWifiData] = useState({
@@ -201,6 +238,8 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
         logo_enabled: logoEnabled,
         logo_size: logoSize,
         logo_icon: selectedIcon,
+        custom_logo_uri: customLogoUri,
+        logo_type: logoType,
         error_correction_level: errorCorrectionLevel
       };
 
@@ -217,7 +256,9 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
         logoSize: logoSize,
         errorCorrectionLevel: errorCorrectionLevel,
         selectedIcon: selectedIcon,
-        gradientColors: gradientColors
+        gradientColors: gradientColors,
+        customLogoUri: customLogoUri,
+        logoType: logoType
       });
 
       Alert.alert(
@@ -254,7 +295,7 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
               }
             }
           },
-          { text: 'Voltar', onPress: handleBack }
+          { text: 'Voltar', onPress: () => navigation.navigate('Home' as never) }
         ]
       );
 
@@ -404,7 +445,7 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
     <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home' as never)}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Novo QR Code</Text>
@@ -456,6 +497,8 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
               selectedIcon={lastGeneratedQR?.selectedIcon || selectedIcon}
               qrStyle={lastGeneratedQR?.style || qrStyle}
               gradientColors={lastGeneratedQR?.gradientColors || gradientColors}
+              customLogoUri={lastGeneratedQR?.customLogoUri || customLogoUri}
+              logoType={lastGeneratedQR?.logoType || logoType}
             />
           </ViewShot>
           <QRCodeSVG
@@ -469,6 +512,8 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
             selectedIcon={selectedIcon}
             qrStyle={qrStyle}
             gradientColors={gradientColors}
+            customLogoUri={customLogoUri}
+            logoType={logoType}
           />
         </View>
 
@@ -803,10 +848,8 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
 
               {/* Cores */}
               <View style={styles.customSection}>
-                <Text style={styles.customSectionTitle}>🎨 Cores</Text>
-                
                 <View style={styles.colorRow}>
-                  <Text style={styles.colorLabel}>Fundo:</Text>
+                  <Text style={styles.customSectionTitle}>🎨 Fundo:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScrollView}>
                     <View style={styles.colorOptions}>
                       {['#FFFFFF', '#F5F5F5', '#E3F2FD', '#E8F5E8', '#FFF3E0', '#FFEBEE', '#F3E5F5', '#E8EAF6'].map((color) => (
@@ -847,21 +890,89 @@ export default function NewQRCodeScreen({ handleBack, userEmail = 'test@example.
                 {logoEnabled && (
                   <>
                     <View style={styles.logoOptionsContainer}>
-                      <Text style={styles.logoOptionsTitle}>Escolha um ícone:</Text>
-                      <View style={styles.logoIconsGrid}>
-                        {['❤️', '⭐', '🔥', '💎', '🎯', '🚀', '💡', '🎨', '🎵', '📱', '🌟', '⚡'].map((icon) => (
-                          <TouchableOpacity
-                            key={icon}
-                            style={[
-                              styles.logoIconOption,
-                              selectedIcon === icon && styles.logoIconOptionSelected
-                            ]}
-                            onPress={() => setSelectedIcon(icon)}
-                          >
-                            <Text style={styles.logoIconText}>{icon}</Text>
-                          </TouchableOpacity>
-                        ))}
+                      <Text style={styles.logoOptionsTitle}>Escolha o tipo de logo:</Text>
+                      
+                      {/* Opções de tipo de logo */}
+                      <View style={styles.logoTypeContainer}>
+                        <TouchableOpacity
+                          style={[
+                            styles.logoTypeButton,
+                            logoType === 'icon' && styles.logoTypeButtonActive
+                          ]}
+                          onPress={() => setLogoType('icon')}
+                        >
+                          <Text style={[
+                            styles.logoTypeButtonText,
+                            logoType === 'icon' && styles.logoTypeButtonTextActive
+                          ]}>
+                            🎨 Ícones
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={[
+                            styles.logoTypeButton,
+                            logoType === 'image' && styles.logoTypeButtonActive
+                          ]}
+                          onPress={() => setLogoType('image')}
+                        >
+                          <Text style={[
+                            styles.logoTypeButtonText,
+                            logoType === 'image' && styles.logoTypeButtonTextActive
+                          ]}>
+                            📷 Imagem
+                          </Text>
+                        </TouchableOpacity>
                       </View>
+
+                      {logoType === 'icon' ? (
+                        <View style={styles.logoIconsGrid}>
+                          {['❤️', '⭐', '🔥', '💎', '🎯', '🚀', '💡', '🎨', '🎵', '📱', '🌟', '⚡'].map((icon) => (
+                            <TouchableOpacity
+                              key={icon}
+                              style={[
+                                styles.logoIconOption,
+                                selectedIcon === icon && styles.logoIconOptionSelected
+                              ]}
+                              onPress={() => setSelectedIcon(icon)}
+                            >
+                              <Text style={styles.logoIconText}>{icon}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      ) : (
+                        <View style={styles.imageUploadContainer}>
+                          <TouchableOpacity 
+                            style={styles.imageUploadButton}
+                            onPress={pickImage}
+                          >
+                            {customLogoUri ? (
+                              <Image 
+                                source={{ uri: customLogoUri }} 
+                                style={styles.uploadedImagePreview}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <View style={styles.uploadPlaceholder}>
+                                <Text style={styles.uploadPlaceholderText}>📷</Text>
+                                <Text style={styles.uploadPlaceholderSubtext}>Tocar para selecionar</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                          
+                          {customLogoUri && (
+                            <TouchableOpacity 
+                              style={styles.removeImageButton}
+                              onPress={() => {
+                                setCustomLogoUri(null);
+                                setLogoType('icon');
+                              }}
+                            >
+                              <Text style={styles.removeImageButtonText}>🗑️ Remover</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
                     </View>
 
                     <View style={styles.sliderSection}>

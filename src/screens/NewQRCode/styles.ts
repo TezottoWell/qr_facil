@@ -893,4 +893,91 @@ export const styles = StyleSheet.create({
     color: '#6b7280',
     fontWeight: '500',
   },
+
+  // Estilos para upload de imagem
+  logoTypeContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    gap: 10,
+  },
+
+  logoTypeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
+  logoTypeButtonActive: {
+    backgroundColor: '#667eea',
+    borderColor: '#667eea',
+  },
+
+  logoTypeButtonText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  logoTypeButtonTextActive: {
+    color: '#ffffff',
+  },
+
+  imageUploadContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  imageUploadButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  uploadedImagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+
+  uploadPlaceholder: {
+    alignItems: 'center',
+  },
+
+  uploadPlaceholderText: {
+    fontSize: 24,
+    marginBottom: 5,
+  },
+
+  uploadPlaceholderSubtext: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+  },
+
+  removeImageButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.4)',
+  },
+
+  removeImageButtonText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });

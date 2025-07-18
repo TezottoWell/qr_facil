@@ -11,6 +11,11 @@ interface TraditionalQRCodeProps {
   gradientColors?: string[];
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
   style?: ViewStyle;
+  logoEnabled?: boolean;
+  logoSize?: number;
+  logoIcon?: string;
+  customLogoUri?: string | null;
+  logoType?: 'icon' | 'image';
 }
 
 // Função para gerar matriz QR real usando qrcode-generator

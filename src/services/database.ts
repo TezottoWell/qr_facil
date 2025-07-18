@@ -35,11 +35,26 @@ export const initDatabase = async () => {
         logo_enabled INTEGER DEFAULT 0,
         logo_size REAL DEFAULT 0.2,
         logo_icon TEXT DEFAULT '❤️',
+        custom_logo_uri TEXT,
+        logo_type TEXT DEFAULT 'icon',
         error_correction_level TEXT DEFAULT 'M',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_email) REFERENCES users(email)
       );
     `);
+
+    // Adicionar as novas colunas se a tabela já existir (migração)
+    try {
+      await db.execAsync(`ALTER TABLE qr_codes ADD COLUMN custom_logo_uri TEXT;`);
+    } catch (error) {
+      // Coluna já existe
+    }
+    
+    try {
+      await db.execAsync(`ALTER TABLE qr_codes ADD COLUMN logo_type TEXT DEFAULT 'icon';`);
+    } catch (error) {
+      // Coluna já existe
+    }
     
     console.log('Banco de dados inicializado com sucesso');
   } catch (error) {
@@ -113,6 +128,8 @@ export interface QRCodeData {
   logo_enabled?: boolean;
   logo_size?: number;
   logo_icon?: string;
+  custom_logo_uri?: string | null;
+  logo_type?: 'icon' | 'image';
   error_correction_level?: 'L' | 'M' | 'Q' | 'H';
 }
 
@@ -122,8 +139,8 @@ export const insertQRCode = async (userEmail: string, qrData: QRCodeData) => {
     
     const result = await db.runAsync(
       `INSERT INTO qr_codes 
-       (user_email, title, content, qr_type, qr_style, background_color, foreground_color, gradient_colors, logo_enabled, logo_size, logo_icon, error_correction_level) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_email, title, content, qr_type, qr_style, background_color, foreground_color, gradient_colors, logo_enabled, logo_size, logo_icon, custom_logo_uri, logo_type, error_correction_level) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userEmail,
         qrData.title,
@@ -136,6 +153,8 @@ export const insertQRCode = async (userEmail: string, qrData: QRCodeData) => {
         qrData.logo_enabled ? 1 : 0,
         qrData.logo_size || 0.2,
         qrData.logo_icon || '❤️',
+        qrData.custom_logo_uri || null,
+        qrData.logo_type || 'icon',
         qrData.error_correction_level || 'M'
       ]
     );
