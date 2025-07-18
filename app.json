@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lui-zwellington.qr-facil",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Este app precisa acessar sua galeria de fotos para permitir adicionar logos personalizados aos seus QR codes."
       }
     },
     "android": {

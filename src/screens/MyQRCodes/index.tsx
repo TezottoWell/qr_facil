@@ -32,6 +32,8 @@ interface QRCodeItem {
   logo_enabled: number;
   logo_size: number;
   logo_icon?: string;
+  custom_logo_uri?: string | null;
+  logo_type?: 'icon' | 'image';
   error_correction_level: string;
   created_at: string;
   user_email: string;
@@ -68,6 +70,8 @@ const QRCodePreview = ({ item, size = 80 }: { item: QRCodeItem; size?: number })
         logoEnabled={item.logo_enabled === 1}
         logoSize={item.logo_size}
         logoIcon={item.logo_icon}
+        customLogoUri={item.custom_logo_uri}
+        logoType={item.logo_type || 'icon'}
         errorCorrectionLevel={item.error_correction_level as 'L' | 'M' | 'Q' | 'H'}
         style={(item.qr_style as QRCodeStyle) || 'traditional'}
         gradientColors={gradientColors}
@@ -111,6 +115,8 @@ const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: numbe
         logoEnabled={item.logo_enabled === 1}
         logoSize={item.logo_size}
         logoIcon={item.logo_icon}
+        customLogoUri={item.custom_logo_uri}
+        logoType={item.logo_type || 'icon'}
         errorCorrectionLevel={item.error_correction_level as 'L' | 'M' | 'Q' | 'H'}
         style={(item.qr_style as QRCodeStyle) || 'traditional'}
         gradientColors={gradientColors}
