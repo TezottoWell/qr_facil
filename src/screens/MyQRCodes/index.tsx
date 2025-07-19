@@ -21,6 +21,7 @@ import { styles } from './styles';
 import { getUserQRCodes, deleteQRCode } from '../../services/database';
 import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { usePremiumFeatures } from '../../contexts/PremiumContext';
 import NewQRCodeScreen from '../NewQRCode';
 
 interface QRCodeItem {
@@ -131,6 +132,7 @@ const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: numbe
 export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQRCodesScreenProps) {
   const navigation = useNavigation();
   const { t } = useLanguage();
+  const premium = usePremiumFeatures();
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -321,6 +323,18 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
         <Text style={styles.searchIcon}>🔍</Text>
       </View>
 
+      {/* Aviso do Plano Free */}
+      {!premium.isPremium && (
+        <View style={styles.freeWarning}>
+          <View style={styles.freeWarningContent}>
+            <Ionicons name="information-circle-outline" size={20} color="#fbbf24" />
+            <Text style={styles.freeWarningText}>
+              Você está no plano free e só pode criar um único QR Code
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* QR Codes List */}
       <FlatList
         data={filteredQRCodes}
@@ -469,6 +483,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
           }}
         />
       </Modal>
+
     </LinearGradient>
   );
 }

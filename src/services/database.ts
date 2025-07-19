@@ -16,6 +16,8 @@ export const initDatabase = async () => {
         email TEXT NOT NULL,
         name TEXT,
         photo TEXT,
+        premium_status INTEGER DEFAULT 0,
+        free_qr_used INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -52,6 +54,19 @@ export const initDatabase = async () => {
     
     try {
       await db.execAsync(`ALTER TABLE qr_codes ADD COLUMN logo_type TEXT DEFAULT 'icon';`);
+    } catch (error) {
+      // Coluna já existe
+    }
+
+    // Adicionar campos premium aos users se não existirem
+    try {
+      await db.execAsync(`ALTER TABLE users ADD COLUMN premium_status INTEGER DEFAULT 0;`);
+    } catch (error) {
+      // Coluna já existe
+    }
+    
+    try {
+      await db.execAsync(`ALTER TABLE users ADD COLUMN free_qr_used INTEGER DEFAULT 0;`);
     } catch (error) {
       // Coluna já existe
     }
@@ -206,6 +221,59 @@ export default {
   getUserQRCodes,
   deleteQRCode,
   deleteUserAccount
+};
+
+// Funções para gerenciar status premium
+export const updateUserPremiumStatus = async (userEmail: string, isPremium: boolean) => {
+  try {
+    const db = await openDatabase();
+    await db.runAsync(
+      'UPDATE users SET premium_status = ? WHERE email = ?',
+      [isPremium ? 1 : 0, userEmail]
+    );
+    console.log('Premium status updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating premium status:', error);
+    return false;
+  }
+};
+
+export const markFreeQRUsed = async (userEmail: string) => {
+  try {
+    const db = await openDatabase();
+    await db.runAsync(
+      'UPDATE users SET free_qr_used = 1 WHERE email = ?',
+      [userEmail]
+    );
+    console.log('Free QR marked as used');
+    return true;
+  } catch (error) {
+    console.error('Error marking free QR as used:', error);
+    return false;
+  }
+};
+
+export const getUserPremiumInfo = async (userEmail: string) => {
+  try {
+    const db = await openDatabase();
+    const user = await db.getFirstAsync(
+      'SELECT premium_status, free_qr_used FROM users WHERE email = ?',
+      [userEmail]
+    );
+    
+    if (user) {
+      return {
+        isPremium: (user as any).premium_status === 1,
+        freeQRUsed: (user as any).free_qr_used === 1
+      };
+    }
+    
+    return { isPremium: false, freeQRUsed: false };
+  } catch (error) {
+    console.error('Error getting premium info:', error);
+    return { isPremium: false, freeQRUsed: false };
+  }
 };
 
 // Função para deletar completamente a conta do usuário e todos os dados associados

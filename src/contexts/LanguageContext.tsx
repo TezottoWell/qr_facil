@@ -219,6 +219,27 @@ const translations = {
     'deleteAccountError': 'Erro ao deletar conta. Tente novamente.',
     'confirmationRequired': 'É necessário digitar "DELETAR" para confirmar',
     'accountDeletionInProgress': 'Deletando conta...',
+
+    // Premium/Upgrade
+    'upgradeToPro': 'Upgrade para PRO',
+    'unlockFullAccess': 'Desbloqueie acesso completo ao app',
+    'oneTimePayment': 'Pagamento único',
+    'noSubscription': 'Sem mensalidades ou assinaturas',
+    'whatYouGet': 'O que você ganha:',
+    'upgradeNow': 'Fazer Upgrade Agora',
+    'maybeLater': 'Talvez Depois',
+    'unlimitedQRCodes': 'QR Codes Ilimitados',
+    'unlimitedQRCodesDesc': 'Crie quantos QR Codes quiser',
+    'allStyles': 'Todos os Estilos',
+    'allStylesDesc': 'Instagram, Dots, Rounded e mais',
+    'fullCustomization': 'Customização Completa',
+    'fullCustomizationDesc': 'Cores, gradientes e logos personalizados',
+    'accessMyQRCodes': 'Acesso aos Meus Códigos',
+    'accessMyQRCodesDesc': 'Gerencie todos seus QR Codes salvos',
+    'featureLocked': 'Recurso Bloqueado',
+    'upgradeToUnlock': 'Faça upgrade para desbloquear',
+    'freeQRUsed': 'QR Code gratuito já usado',
+    'oneFreeQROnly': 'Você pode criar apenas 1 QR Code gratuito',
     
     // QRScanner Screen
     'scanQRCode': 'Escanear QR Code',
@@ -468,6 +489,27 @@ const translations = {
     'deleteAccountError': 'Error deleting account. Please try again.',
     'confirmationRequired': 'You must type "DELETE" to confirm',
     'accountDeletionInProgress': 'Deleting account...',
+
+    // Premium/Upgrade
+    'upgradeToPro': 'Upgrade to PRO',
+    'unlockFullAccess': 'Unlock full access to the app',
+    'oneTimePayment': 'One-time payment',
+    'noSubscription': 'No monthly fees or subscriptions',
+    'whatYouGet': 'What you get:',
+    'upgradeNow': 'Upgrade Now',
+    'maybeLater': 'Maybe Later',
+    'unlimitedQRCodes': 'Unlimited QR Codes',
+    'unlimitedQRCodesDesc': 'Create as many QR Codes as you want',
+    'allStyles': 'All Styles',
+    'allStylesDesc': 'Instagram, Dots, Rounded and more',
+    'fullCustomization': 'Full Customization',
+    'fullCustomizationDesc': 'Colors, gradients and custom logos',
+    'accessMyQRCodes': 'Access My QR Codes',
+    'accessMyQRCodesDesc': 'Manage all your saved QR Codes',
+    'featureLocked': 'Feature Locked',
+    'upgradeToUnlock': 'Upgrade to unlock',
+    'freeQRUsed': 'Free QR Code already used',
+    'oneFreeQROnly': 'You can create only 1 free QR Code',
     
     // QRScanner Screen
     'scanQRCode': 'Scan QR Code',
@@ -717,6 +759,27 @@ const translations = {
     'deleteAccountError': 'Error al eliminar cuenta. Inténtalo de nuevo.',
     'confirmationRequired': 'Debes escribir "ELIMINAR" para confirmar',
     'accountDeletionInProgress': 'Eliminando cuenta...',
+
+    // Premium/Upgrade
+    'upgradeToPro': 'Actualizar a PRO',
+    'unlockFullAccess': 'Desbloquea acceso completo a la app',
+    'oneTimePayment': 'Pago único',
+    'noSubscription': 'Sin tarifas mensuales o suscripciones',
+    'whatYouGet': 'Lo que obtienes:',
+    'upgradeNow': 'Actualizar Ahora',
+    'maybeLater': 'Tal vez Después',
+    'unlimitedQRCodes': 'Códigos QR Ilimitados',
+    'unlimitedQRCodesDesc': 'Crea tantos códigos QR como quieras',
+    'allStyles': 'Todos los Estilos',
+    'allStylesDesc': 'Instagram, Dots, Rounded y más',
+    'fullCustomization': 'Personalización Completa',
+    'fullCustomizationDesc': 'Colores, gradientes y logos personalizados',
+    'accessMyQRCodes': 'Acceso a Mis Códigos',
+    'accessMyQRCodesDesc': 'Administra todos tus códigos QR guardados',
+    'featureLocked': 'Función Bloqueada',
+    'upgradeToUnlock': 'Actualiza para desbloquear',
+    'freeQRUsed': 'Código QR gratuito ya usado',
+    'oneFreeQROnly': 'Solo puedes crear 1 código QR gratuito',
     
     // QRScanner Screen
     'scanQRCode': 'Escanear Código QR',
@@ -768,8 +831,12 @@ const translations = {
 const getDeviceLanguage = (): Language => {
   const deviceLocale = Localization.locale;
   
-  if (deviceLocale.startsWith('pt')) return 'pt-BR';
-  if (deviceLocale.startsWith('es')) return 'es-ES';
+  // Verificar se deviceLocale existe antes de usar startsWith
+  if (deviceLocale && typeof deviceLocale === 'string') {
+    if (deviceLocale.startsWith('pt')) return 'pt-BR';
+    if (deviceLocale.startsWith('es')) return 'es-ES';
+  }
+  
   return 'en-US'; // Default para inglês
 };
 

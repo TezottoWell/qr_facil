@@ -72,6 +72,15 @@ export const styles = StyleSheet.create({
     fontSize: 20,
   },
 
+  customizeButtonDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    opacity: 0.6,
+  },
+
+  customizeIconDisabled: {
+    opacity: 0.5,
+  },
+
   closeButton: {
     fontSize: 18,
     color: '#ffffff',

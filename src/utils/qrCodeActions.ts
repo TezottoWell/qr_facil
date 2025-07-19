@@ -2,6 +2,7 @@ import { Alert, Linking, Clipboard } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import { QRCodeData } from './qrCodeProcessor';
 import { historyDB } from '../services/historyDatabase';
+import { hybridService } from '../services/hybridService';
 
 export async function executeQRCodeAction(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   try {
@@ -41,7 +42,22 @@ export async function executeQRCodeAction(qrData: QRCodeData, userEmail?: string
 
 async function saveToHistory(qrData: QRCodeData, userEmail?: string, t?: (key: string) => string) {
   try {
-    await historyDB.saveQRCode(qrData, userEmail);
+    // Salvar usando serviço híbrido (local + nuvem)
+    const saveResult = await hybridService.addToHistory(userEmail || '', {
+      type: qrData.type,
+      rawData: qrData.rawData,
+      parsedData: JSON.stringify(qrData.parsedData),
+      description: qrData.description,
+      actionText: qrData.actionText,
+      timestamp: Date.now()
+    });
+
+    if (!saveResult.success) {
+      console.error('Erro ao salvar no histórico híbrido:', saveResult.error);
+      // Fallback para método local apenas
+      await historyDB.saveQRCode(qrData, userEmail);
+    }
+
     Alert.alert(t?.('success') || 'Sucesso', 'Dados salvos no histórico!', [{ text: t?.('ok') || 'OK' }]);
   } catch (error) {
     console.error('Erro ao salvar no histórico:', error);

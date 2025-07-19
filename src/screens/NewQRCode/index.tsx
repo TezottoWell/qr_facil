@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
@@ -21,8 +22,10 @@ import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import { styles } from './styles';
 import { insertQRCode, QRCodeData } from '../../services/database';
+import { hybridService } from '../../services/hybridService';
 import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { usePremiumFeatures } from '../../contexts/PremiumContext';
 
 // Componente QRCode real com estilos
 const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors, customLogoUri, logoType }: any) => (
@@ -44,7 +47,7 @@ const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize,
       backgroundColor={backgroundColor || '#FFFFFF'}
       foregroundColor={'#000000'}
       logoEnabled={logoEnabled}
-      logoSize={logoSize}
+      logoSize={validateLogoSize(logoSize)}
       logoIcon={selectedIcon}
       customLogoUri={customLogoUri}
       logoType={logoType}
@@ -71,7 +74,7 @@ const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, lo
       backgroundColor={backgroundColor || '#FFFFFF'}
       foregroundColor={'#000000'}
       logoEnabled={logoEnabled}
-      logoSize={logoSize}
+      logoSize={validateLogoSize(logoSize)}
       logoIcon={selectedIcon}
       customLogoUri={customLogoUri}
       logoType={logoType}
@@ -86,6 +89,14 @@ interface NewQRCodeScreenProps {
   userEmail?: string;
   onClose?: () => void;
 }
+
+// Função para validar logoSize
+const validateLogoSize = (size: number): number => {
+  if (isNaN(size) || size === null || size === undefined || size < 0 || size > 1) {
+    return 0.2; // valor padrão
+  }
+  return size;
+};
 
 // Função para obter tipos de QR traduzidos
 const getQRTypes = (t: (key: string) => string) => [
@@ -121,6 +132,7 @@ const getPlaceholderText = (type: string, t: (key: string) => string) => {
 export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClose }: NewQRCodeScreenProps) {
   const navigation = useNavigation();
   const { t } = useLanguage();
+  const premium = usePremiumFeatures();
   
   // Arrays traduzidos
   const QR_TYPES = getQRTypes(t);
@@ -248,23 +260,57 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
     try {
       setIsGenerating(true);
 
+      // Verificar se pode criar QR code
+      if (!premium.canCreateQR()) {
+        setIsGenerating(false);
+        premium.showUpgradeModal();
+        return;
+      }
+
       const qrData: QRCodeData = {
         title,
         content: formatContent(),
         qr_type: selectedType,
-        qr_style: qrStyle,
-        background_color: backgroundColor,
-        foreground_color: '#000000', // Valor padrão, será sobrescrito pela paleta
-        gradient_colors: gradientColors,
-        logo_enabled: logoEnabled,
-        logo_size: logoSize,
-        logo_icon: selectedIcon,
-        custom_logo_uri: customLogoUri,
-        logo_type: logoType,
-        error_correction_level: errorCorrectionLevel
+        qr_style: premium.canCustomizeQR() ? qrStyle : 'traditional', // Forçar traditional se não premium
+        background_color: premium.canCustomizeQR() ? backgroundColor : '#FFFFFF',
+        foreground_color: '#000000',
+        gradient_colors: premium.canCustomizeQR() ? gradientColors : [],
+        logo_enabled: premium.canCustomizeQR() ? logoEnabled : false,
+        logo_size: premium.canCustomizeQR() ? validateLogoSize(logoSize) : 0.2,
+        logo_icon: premium.canCustomizeQR() ? selectedIcon : '❤️',
+        custom_logo_uri: premium.canCustomizeQR() ? customLogoUri : null,
+        logo_type: premium.canCustomizeQR() ? logoType : 'icon',
+        error_correction_level: premium.canCustomizeQR() ? errorCorrectionLevel : 'M'
       };
 
-      await insertQRCode(userEmail, qrData);
+      // Salvar usando serviço híbrido (local + nuvem)
+      const saveResult = await hybridService.saveQRCode(userEmail, {
+        title: qrData.title,
+        content: qrData.content,
+        qr_type: qrData.qr_type,
+        qr_style: qrData.qr_style,
+        background_color: qrData.background_color,
+        foreground_color: qrData.foreground_color,
+        gradient_colors: qrData.gradient_colors,
+        logo_enabled: qrData.logo_enabled,
+        logo_size: qrData.logo_size,
+        logo_icon: qrData.logo_icon,
+        custom_logo_uri: qrData.custom_logo_uri,
+        logo_type: qrData.logo_type,
+        error_correction_level: qrData.error_correction_level,
+        settings: {}
+      });
+
+      if (!saveResult.success) {
+        console.error('Erro ao salvar QR code:', saveResult.error);
+        // Fallback para método local apenas
+        await insertQRCode(userEmail, qrData);
+      }
+      
+      // Marcar QR gratuito como usado se não for premium
+      if (!premium.isPremium) {
+        await premium.markFreeQRAsUsed();
+      }
 
       // Salvar dados do QR Code gerado para compartilhamento
       setLastGeneratedQR({
@@ -274,7 +320,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
         style: qrStyle,
         backgroundColor: backgroundColor,
         logoEnabled: logoEnabled,
-        logoSize: logoSize,
+        logoSize: validateLogoSize(logoSize),
         errorCorrectionLevel: errorCorrectionLevel,
         selectedIcon: selectedIcon,
         gradientColors: gradientColors,
@@ -334,7 +380,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
       setSelectedType('text');
       setSelectedIcon('❤️');
       setLogoEnabled(false);
-      setLogoSize(0.2);
+      setLogoSize(validateLogoSize(0.2));
       setQrStyle('traditional');
       setGradientColors(['#000000']);
       setWifiData({ ssid: '', password: '', security: 'WPA', hidden: false });
@@ -486,10 +532,30 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
         )}
         <Text style={styles.headerTitle}>{t('newQRCode')}</Text>
         <TouchableOpacity 
-          style={styles.customizeButton} 
-          onPress={() => setShowCustomization(true)}
+          style={[
+            styles.customizeButton,
+            !premium.canCustomizeQR() && styles.customizeButtonDisabled
+          ]} 
+          onPress={() => {
+            if (premium.canCustomizeQR()) {
+              setShowCustomization(true);
+            } else {
+              premium.showUpgradeModal();
+            }
+          }}
         >
-          <Text style={styles.customizeIcon}>🎨</Text>
+          {!premium.canCustomizeQR() && (
+            <Ionicons 
+              name="lock-closed" 
+              size={16} 
+              color="rgba(255, 255, 255, 0.5)" 
+              style={{ position: 'absolute', top: 2, right: 2 }}
+            />
+          )}
+          <Text style={[
+            styles.customizeIcon,
+            !premium.canCustomizeQR() && styles.customizeIconDisabled
+          ]}>🎨</Text>
         </TouchableOpacity>
       </View>
 
@@ -543,7 +609,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
             backgroundColor={backgroundColor}
             color={'#000000'}
             logoEnabled={logoEnabled}
-            logoSize={logoSize}
+            logoSize={validateLogoSize(logoSize)}
             errorCorrectionLevel={errorCorrectionLevel}
             selectedIcon={selectedIcon}
             qrStyle={qrStyle}
@@ -1014,7 +1080,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
                     <View style={styles.sliderSection}>
                       <View style={styles.sliderLabelRow}>
                         <Text style={styles.sliderLabel}>{t('iconSize')}</Text>
-                        <Text style={styles.sliderValue}>{Math.round(logoSize * 100)}%</Text>
+                        <Text style={styles.sliderValue}>{Math.round((logoSize || 0.2) * 100)}%</Text>
                       </View>
                       
                       <Text style={styles.sliderDescription}>
@@ -1023,33 +1089,33 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
                       
                       <View style={styles.sliderContainer}>
                         <View style={styles.sliderTrack}>
-                          <View style={[styles.sliderFill, { width: `${logoSize * 100}%` }]} />
-                          <View style={[styles.sliderThumb, { left: `${logoSize * 100 - 2}%` }]} />
+                          <View style={[styles.sliderFill, { width: `${(logoSize || 0.2) * 100}%` }]} />
+                          <View style={[styles.sliderThumb, { left: `${(logoSize || 0.2) * 100 - 2}%` }]} />
                         </View>
                         
                         <View style={styles.sliderButtons}>
                           <TouchableOpacity 
-                            style={[styles.sliderButton, logoSize === 0.1 && styles.sliderButtonActive]}
-                            onPress={() => setLogoSize(0.1)}
+                            style={[styles.sliderButton, validateLogoSize(logoSize) === 0.1 && styles.sliderButtonActive]}
+                            onPress={() => setLogoSize(validateLogoSize(0.1))}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.1 && styles.sliderButtonTextActive]}>{t('small')}</Text>
-                            <Text style={[styles.sliderButtonValue, logoSize === 0.1 && styles.sliderButtonValueActive]}>10%</Text>
+                            <Text style={[styles.sliderButtonText, validateLogoSize(logoSize) === 0.1 && styles.sliderButtonTextActive]}>{t('small')}</Text>
+                            <Text style={[styles.sliderButtonValue, validateLogoSize(logoSize) === 0.1 && styles.sliderButtonValueActive]}>10%</Text>
                           </TouchableOpacity>
                           
                           <TouchableOpacity 
-                            style={[styles.sliderButton, logoSize === 0.2 && styles.sliderButtonActive]}
-                            onPress={() => setLogoSize(0.2)}
+                            style={[styles.sliderButton, validateLogoSize(logoSize) === 0.2 && styles.sliderButtonActive]}
+                            onPress={() => setLogoSize(validateLogoSize(0.2))}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.2 && styles.sliderButtonTextActive]}>{t('medium')}</Text>
-                            <Text style={[styles.sliderButtonValue, logoSize === 0.2 && styles.sliderButtonValueActive]}>20%</Text>
+                            <Text style={[styles.sliderButtonText, validateLogoSize(logoSize) === 0.2 && styles.sliderButtonTextActive]}>{t('medium')}</Text>
+                            <Text style={[styles.sliderButtonValue, validateLogoSize(logoSize) === 0.2 && styles.sliderButtonValueActive]}>20%</Text>
                           </TouchableOpacity>
                           
                           <TouchableOpacity 
-                            style={[styles.sliderButton, logoSize === 0.3 && styles.sliderButtonActive]}
-                            onPress={() => setLogoSize(0.3)}
+                            style={[styles.sliderButton, validateLogoSize(logoSize) === 0.3 && styles.sliderButtonActive]}
+                            onPress={() => setLogoSize(validateLogoSize(0.3))}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.3 && styles.sliderButtonTextActive]}>{t('large')}</Text>
-                            <Text style={[styles.sliderButtonValue, logoSize === 0.3 && styles.sliderButtonValueActive]}>30%</Text>
+                            <Text style={[styles.sliderButtonText, validateLogoSize(logoSize) === 0.3 && styles.sliderButtonTextActive]}>{t('large')}</Text>
+                            <Text style={[styles.sliderButtonValue, validateLogoSize(logoSize) === 0.3 && styles.sliderButtonValueActive]}>30%</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -1099,6 +1165,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClos
           </View>
         </View>
       </Modal>
+
     </LinearGradient>
   );
 }

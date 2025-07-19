@@ -9,7 +9,8 @@
       "Bash(npm uninstall:*)",
       "Bash(grep:*)",
       "mcp__context-7__resolve-library-id",
-      "mcp__context-7__get-library-docs"
+      "mcp__context-7__get-library-docs",
+      "Bash(find:*)"
     ],
     "deny": []
   }

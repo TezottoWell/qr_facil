@@ -16,7 +16,9 @@ import {
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDatabase, insertUser } from './src/services/database';
 import { historyDB } from './src/services/historyDatabase';
+import { hybridService } from './src/services/hybridService';
 import { LanguageProvider, useLanguage } from './src/contexts/LanguageContext';
+import { PremiumProvider } from './src/contexts/PremiumContext';
 
 // Configuração do Google Sign-In
 GoogleSignin.configure({
@@ -34,6 +36,7 @@ function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [cloudUserId, setCloudUserId] = useState<string | null>(null);
 
   useEffect(() => {
     initializeApp();
@@ -64,6 +67,23 @@ function AppContent() {
         if (isSuccessResponse(userInfo)) {
           setUser(userInfo.data.user);
           setIsSignedIn(true);
+          
+          // Configurar usuário no hybridService para usuários já logados
+          try {
+            const result = await hybridService.createUser({
+              email: userInfo.data.user.email,
+              name: userInfo.data.user.name || '',
+              photo: userInfo.data.user.photo || '',
+              googleId: userInfo.data.user.id
+            });
+            
+            if (result.success && result.userId) {
+              hybridService.setCurrentUser(result.userId, userInfo.data.user.email);
+              setCloudUserId(result.userId);
+            }
+          } catch (error) {
+            console.log('Erro ao configurar usuário híbrido:', error);
+          }
         }
       }
     } catch (error) {
@@ -89,16 +109,31 @@ function AppContent() {
         setUser(response.data.user);
         setIsSignedIn(true);
 
-        // Inserir usuário no banco de dados usando a nova API
+        // Inserir usuário usando o serviço híbrido (local + nuvem)
         try {
+          const result = await hybridService.createUser({
+            email: response.data.user.email,
+            name: response.data.user.name || '',
+            photo: response.data.user.photo || '',
+            googleId: response.data.user.id
+          });
+          
+          if (result.success && result.userId) {
+            console.log('Usuário criado/atualizado com sucesso:', result.userId);
+            // Configurar usuário atual no hybridService
+            hybridService.setCurrentUser(result.userId, response.data.user.email);
+            setCloudUserId(result.userId);
+          } else if (result.error) {
+            console.log('Aviso:', result.error);
+          }
+        } catch (dbError) {
+          console.error('Erro ao salvar usuário:', dbError);
+          // Fallback para método local apenas
           await insertUser({
             email: response.data.user.email,
             name: response.data.user.name || '',
             photo: response.data.user.photo || ''
           });
-        } catch (dbError) {
-          console.error('Erro ao salvar usuário no banco:', dbError);
-          // Não bloqueamos o login mesmo se houver erro no banco
         }
 
         Alert.alert(t('success'), `${t('welcome')}, ${response.data.user.name}!`);
@@ -137,6 +172,7 @@ function AppContent() {
       await GoogleSignin.signOut();
       setUser(null);
       setIsSignedIn(false);
+      setCloudUserId(null);
       Alert.alert(t('success'), t('logoutSuccess'));
     } catch (error) {
       console.log('Erro no logout:', error);
@@ -145,7 +181,7 @@ function AppContent() {
   };
 
   return (
-    <>
+    <PremiumProvider userEmail={user?.email} userId={cloudUserId}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <NavigationContainer>
         <AppNavigator 
@@ -156,7 +192,7 @@ function AppContent() {
           handleSignOut={handleSignOut}
         />
       </NavigationContainer>
-    </>
+    </PremiumProvider>
   );
 }
 

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User } from '@react-native-google-signin/google-signin';
 import { useLanguage, Language } from '../../contexts/LanguageContext';
+import { usePremiumFeatures } from '../../contexts/PremiumContext';
 import { deleteUserAccount } from '../../services/database';
 import { historyDB } from '../../services/historyDatabase';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -26,6 +27,7 @@ interface AccountScreenProps {
 
 export default function AccountScreen({ user, handleSignOut }: AccountScreenProps) {
   const { language, setLanguage, t } = useLanguage();
+  const premium = usePremiumFeatures();
   
   // Estado temporário para o plano (mockado)
   const [planStatus] = useState<'ativo' | 'inativo'>('inativo');
@@ -138,22 +140,42 @@ export default function AccountScreen({ user, handleSignOut }: AccountScreenProp
             <Text style={styles.planTitle}>{t('plan')}</Text>
             <View style={[
               styles.planStatusBadge,
-              planStatus === 'ativo' ? styles.planStatusActive : styles.planStatusInactive
+              premium.isPremium ? styles.planStatusActive : styles.planStatusInactive
             ]}>
               <Text style={[
                 styles.planStatusText,
-                planStatus === 'ativo' ? styles.planStatusTextActive : styles.planStatusTextInactive
+                premium.isPremium ? styles.planStatusTextActive : styles.planStatusTextInactive
               ]}>
-                {planStatus === 'ativo' ? t('active') : t('inactive')}
+                {premium.isPremium ? 'PRO' : 'FREE'}
               </Text>
             </View>
           </View>
           <Text style={styles.planDescription}>
-            {planStatus === 'ativo' 
-              ? t('planActiveDescription')
-              : t('planInactiveDescription')
+            {premium.isPremium 
+              ? 'Você tem acesso completo a todos os recursos premium.'
+              : 'Você pode criar 1 QR Code gratuito. Faça upgrade para acesso completo.'
             }
           </Text>
+          
+          {/* Botão de Upgrade (apenas se não for premium) */}
+          {!premium.isPremium && (
+            <TouchableOpacity 
+              style={styles.upgradeButton}
+              onPress={() => premium.showUpgradeModal()}
+            >
+              <LinearGradient
+                colors={['#FF6B6B', '#FF8E53']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.upgradeButtonGradient}
+              >
+                <Ionicons name="diamond-outline" size={20} color="#ffffff" />
+                <Text style={styles.upgradeButtonText}>
+                  {t('upgradeToPro')}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Language Card */}
