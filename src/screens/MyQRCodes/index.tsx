@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
@@ -137,18 +137,22 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
   const [filteredQRCodes, setFilteredQRCodes] = useState<QRCodeItem[]>([]);
   const viewShotRef = useRef<ViewShot>(null);
 
-  useEffect(() => {
-    loadQRCodes();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadQRCodes();
+    }, [loadQRCodes])
+  );
 
   useEffect(() => {
     filterQRCodes();
   }, [qrCodes, searchQuery]);
 
-  const loadQRCodes = async () => {
+  const loadQRCodes = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Loading QR codes for user:', userEmail);
       const userQRCodes = await getUserQRCodes(userEmail);
+      console.log('Loaded QR codes:', userQRCodes.length);
       setQrCodes(userQRCodes as QRCodeItem[]);
     } catch (error) {
       console.error('Erro ao carregar QR codes:', error);
@@ -156,7 +160,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
     } finally {
       setLoading(false);
     }
-  };
+  }, [userEmail]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -165,8 +169,11 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
   };
 
   const filterQRCodes = () => {
+    console.log('filterQRCodes called - qrCodes length:', qrCodes.length, 'searchQuery:', searchQuery);
+    
     if (!searchQuery.trim()) {
       setFilteredQRCodes(qrCodes);
+      console.log('No search query, setting filtered to all qrCodes:', qrCodes.length);
       return;
     }
 
@@ -175,6 +182,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
       qr.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       QR_TYPE_LABELS[qr.qr_type]?.label.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    console.log('Search filtered results:', filtered.length);
     setFilteredQRCodes(filtered);
   };
 

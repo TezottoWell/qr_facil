@@ -257,3 +257,42 @@ Ao clicar em um item do histórico, o botão "Salvar Dados" aparecia novamente, 
 - `src/screens/History/index.tsx` - Parâmetro `fromHistory: true`
 
 Agora o sistema previne corretamente a duplicação de dados no histórico! 🚀
+
+---
+
+## 🔄 CORREÇÃO: Atualização Automática em "Meus QR Codes"
+
+### ❌ Problema Identificado:
+Na tela "Meus QR Codes", novos QR codes criados só apareciam após atualizar manualmente a tela (pull to refresh).
+
+### ✅ Solução Implementada:
+
+**1. Substituição do `useEffect` por `useFocusEffect`**
+- ✅ Adicionado import: `useFocusEffect` e `useCallback`
+- ✅ Substituído `useEffect(() => { loadQRCodes(); }, [])` por `useFocusEffect`
+- ✅ Agora a lista é recarregada automaticamente sempre que a tela ganha foco
+
+**2. Otimização com `useCallback`**
+- ✅ `loadQRCodes` memoizado com dependência `[userEmail]`
+- ✅ `filterQRCodes` memoizado com dependências `[qrCodes, searchQuery]`
+- ✅ Melhor performance e prevenção de re-renders desnecessários
+
+**3. Estrutura Atualizada**
+```typescript
+useFocusEffect(
+  useCallback(() => {
+    loadQRCodes();
+  }, [loadQRCodes])
+);
+```
+
+### 🎯 Resultado da Correção:
+- ✅ **Navegação para "Novo QR Code"** → Criar QR → Voltar = Lista atualizada automaticamente
+- ✅ **Navegação entre abas** → Lista sempre sincronizada
+- ✅ **Performance otimizada** → Hooks memoizados previnem re-renders
+- ✅ **Pull to refresh** → Continua funcionando normalmente
+
+### 📋 Arquivos Modificados:
+- `src/screens/MyQRCodes/index.tsx` - useFocusEffect e otimizações
+
+Agora a tela "Meus QR Codes" se atualiza automaticamente sem necessidade de refresh manual! 🚀
