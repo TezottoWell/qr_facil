@@ -18,7 +18,6 @@ export default function AppNavigator({
   handleGoogleSignIn, 
   handleSignOut 
 }: AppNavigatorProps) {
-  // Renderização condicional simples sem Stack Navigator
   if (isSignedIn && user) {
     return (
       <BottomTabNavigator 

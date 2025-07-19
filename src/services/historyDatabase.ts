@@ -162,6 +162,11 @@ class HistoryDatabase {
       return null;
     }
   }
+
+  // Função para deletar completamente todo o histórico de um usuário
+  async deleteUserHistory(userEmail: string): Promise<boolean> {
+    return await this.clearHistory(userEmail);
+  }
 }
 
 export const historyDB = new HistoryDatabase();

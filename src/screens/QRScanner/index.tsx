@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './styles';
 import { processQRCode, QRCodeData } from '../../utils/qrCodeProcessor';
 import { executeQRCodeAction } from '../../utils/qrCodeActions';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface QRScannerScreenProps {
   userEmail?: string;
 }
 
 export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
+  const { t } = useLanguage();
   const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isActive, setIsActive] = useState(true);
@@ -49,7 +51,7 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
     setQrCodeData(processedData);
     
     // Executar ação baseada no tipo detectado
-    executeQRCodeAction(processedData, userEmail);
+    executeQRCodeAction(processedData, userEmail, false, t);
   };
 
   // Verificar permissões e dispositivo
@@ -58,10 +60,10 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>
-            Permissão de câmera necessária para escanear QR codes
+            {t('cameraPermissionMessage')}
           </Text>
           <Text style={styles.permissionSubtext}>
-            Por favor, conceda acesso à câmera nas configurações do app
+            {t('grantPermission')}
           </Text>
         </View>
       </SafeAreaView>
@@ -72,7 +74,7 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Câmera não disponível</Text>
+          <Text style={styles.errorText}>{t('error')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -91,9 +93,9 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
         {/* Overlay com instruções */}
         <View style={styles.overlay}>
           <View style={styles.topOverlay}>
-            <Text style={styles.title}>Leitor de QR Code</Text>
+            <Text style={styles.title}>{t('scanQRCode')}</Text>
             <Text style={styles.subtitle}>
-              Posicione o QR code dentro do quadrado para escanear
+              {t('pointCamera')}
             </Text>
           </View>
           
@@ -111,18 +113,18 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
             {qrCodeData ? (
               <View style={styles.resultContainer}>
                 <Text style={styles.resultText}>
-                  {getTypeDisplayName(qrCodeData.type)} detectado!
+                  {getTypeDisplayName(qrCodeData.type, t)} {t('scanResult')}!
                 </Text>
                 <Text style={styles.resultData} numberOfLines={3}>
                   {qrCodeData.description}
                 </Text>
                 <Text style={styles.actionText}>
-                  {qrCodeData.actionText}
+                  {getTranslatedActionText(qrCodeData.type, t)}
                 </Text>
               </View>
             ) : (
               <Text style={styles.instructionText}>
-                Mantenha o QR code bem posicionado e aguarde o escaneamento
+                {t('pointCamera')}
               </Text>
             )}
           </View>
@@ -132,17 +134,32 @@ export default function QRScannerScreen({ userEmail }: QRScannerScreenProps) {
   );
 }
 
-function getTypeDisplayName(type: string): string {
+function getTypeDisplayName(type: string, t: (key: string) => string): string {
   const typeNames: Record<string, string> = {
-    'url': 'Link',
-    'contact': 'Contato',
-    'wifi': 'WiFi',
-    'sms': 'SMS',
-    'phone': 'Telefone',
-    'email': 'Email',
+    'url': t('url'),
+    'contact': t('contact'),
+    'wifi': t('wifi'),
+    'sms': t('sms'),
+    'phone': t('phone'),
+    'email': t('email'),
     'geo': 'Localização',
-    'text': 'Texto'
+    'text': t('text')
   };
   
   return typeNames[type] || 'QR Code';
+}
+
+function getTranslatedActionText(type: string, t: (key: string) => string): string {
+  const actionTexts: Record<string, string> = {
+    'url': t('openLink'),
+    'contact': t('saveContact'),
+    'wifi': t('connectWifi'),
+    'sms': t('sendSMS'),
+    'phone': t('call'),
+    'email': t('sendEmail'),
+    'geo': t('openMap'),
+    'text': t('copyText')
+  };
+  
+  return actionTexts[type] || t('copyText');
 }

@@ -11,6 +11,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import QRCode from 'react-native-qrcode-svg';
@@ -19,6 +20,8 @@ import * as Sharing from 'expo-sharing';
 import { styles } from './styles';
 import { getUserQRCodes, deleteQRCode } from '../../services/database';
 import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
+import { useLanguage } from '../../contexts/LanguageContext';
+import NewQRCodeScreen from '../NewQRCode';
 
 interface QRCodeItem {
   id: number;
@@ -127,6 +130,7 @@ const QRCodeForCapture = ({ item, size = 300 }: { item: QRCodeItem; size?: numbe
 
 export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQRCodesScreenProps) {
   const navigation = useNavigation();
+  const { t } = useLanguage();
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,6 +139,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredQRCodes, setFilteredQRCodes] = useState<QRCodeItem[]>([]);
+  const [showNewQRCodeModal, setShowNewQRCodeModal] = useState(false);
   const viewShotRef = useRef<ViewShot>(null);
 
   useFocusEffect(
@@ -156,7 +161,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
       setQrCodes(userQRCodes as QRCodeItem[]);
     } catch (error) {
       console.error('Erro ao carregar QR codes:', error);
-      Alert.alert('Erro', 'Não foi possível carregar seus QR codes');
+      Alert.alert(t('error'), 'Não foi possível carregar seus QR codes');
     } finally {
       setLoading(false);
     }
@@ -192,10 +197,10 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
       setQrCodes(prev => prev.filter(item => item.id !== qrCode.id));
       setShowDeleteModal(false);
       setSelectedQRCode(null);
-      Alert.alert('Sucesso', 'QR Code deletado com sucesso');
+      Alert.alert(t('success'), 'QR Code deletado com sucesso');
     } catch (error) {
       console.error('Erro ao deletar QR code:', error);
-      Alert.alert('Erro', 'Não foi possível deletar o QR code');
+      Alert.alert(t('error'), 'Não foi possível deletar o QR code');
     }
   };
 
@@ -221,7 +226,7 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
       }
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
-      Alert.alert('Erro', 'Não foi possível compartilhar o QR Code');
+      Alert.alert(t('error'), 'Não foi possível compartilhar o QR Code');
     }
   };
 
@@ -281,9 +286,9 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateIcon}>📱</Text>
-      <Text style={styles.emptyStateTitle}>Nenhum QR Code encontrado</Text>
+      <Text style={styles.emptyStateTitle}>{t('noQRCodes')}</Text>
       <Text style={styles.emptyStateSubtitle}>
-        {searchQuery ? 'Tente uma busca diferente' : 'Crie seu primeiro QR Code para começar'}
+        {searchQuery ? 'Tente uma busca diferente' : t('createFirstQR')}
       </Text>
     </View>
   );
@@ -292,20 +297,23 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
     <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home' as never)}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Meus QR Codes</Text>
-        <View style={styles.headerRight}>
+        <View style={styles.headerLeft}>
           <Text style={styles.qrCodeCount}>{qrCodes.length}</Text>
         </View>
+        <Text style={styles.headerTitle}>{t('myQRCodes')}</Text>
+        <TouchableOpacity 
+          style={styles.headerRight}
+          onPress={() => setShowNewQRCodeModal(true)}
+        >
+          <Ionicons name="add" size={28} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar QR codes..."
+          placeholder={t('searchQRCodes')}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="rgba(255,255,255,0.7)"
@@ -444,6 +452,22 @@ export default function MyQRCodesScreen({ userEmail = 'test@example.com' }: MyQR
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* New QR Code Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={showNewQRCodeModal}
+        onRequestClose={() => setShowNewQRCodeModal(false)}
+      >
+        <NewQRCodeScreen 
+          userEmail={userEmail}
+          onClose={() => {
+            setShowNewQRCodeModal(false);
+            loadQRCodes(); // Recarregar a lista após criar um novo QR Code
+          }}
+        />
       </Modal>
     </LinearGradient>
   );

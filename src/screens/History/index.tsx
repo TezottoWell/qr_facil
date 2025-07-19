@@ -16,12 +16,14 @@ import { historyDB, QRCodeHistoryItem } from '../../services/historyDatabase';
 import { processQRCode } from '../../utils/qrCodeProcessor';
 import { executeQRCodeAction } from '../../utils/qrCodeActions';
 import { styles } from './styles';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface HistoryScreenProps {
   userEmail?: string;
 }
 
 export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
+  const { t } = useLanguage();
   const [historyItems, setHistoryItems] = useState<QRCodeHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,7 +35,7 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
       setHistoryItems(items);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
-      Alert.alert('Erro', 'Não foi possível carregar o histórico.');
+      Alert.alert(t('error'), 'Não foi possível carregar o histórico.');
     } finally {
       setLoading(false);
     }
@@ -62,17 +64,17 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
     };
 
     // Executar a ação original (sem opção de salvar novamente)
-    executeQRCodeAction(qrData, userEmail, true);
+    executeQRCodeAction(qrData, userEmail, true, t);
   };
 
   const handleDeleteItem = (item: QRCodeHistoryItem) => {
     Alert.alert(
-      'Excluir Item',
-      'Deseja realmente excluir este item do histórico?',
+      t('delete'),
+      t('deleteItemMessage'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         { 
-          text: 'Excluir', 
+          text: t('delete'), 
           style: 'destructive',
           onPress: async () => {
             if (item.id) {
@@ -91,12 +93,12 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
 
   const handleClearHistory = () => {
     Alert.alert(
-      'Limpar Histórico',
-      'Deseja realmente limpar todo o histórico? Esta ação não pode ser desfeita.',
+      t('clearHistory'),
+      t('clearHistoryMessage'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         { 
-          text: 'Limpar', 
+          text: t('confirm'), 
           style: 'destructive',
           onPress: async () => {
             const success = await historyDB.clearHistory(userEmail);
@@ -149,6 +151,36 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
     return colors[type] || '#00ff88';
   };
 
+  const getTypeDisplayName = (type: string): string => {
+    const typeNames: Record<string, string> = {
+      'url': t('url'),
+      'contact': t('contact'),
+      'wifi': t('wifi'),
+      'sms': t('sms'),
+      'phone': t('phone'),
+      'email': t('email'),
+      'geo': 'Localização',
+      'text': t('text')
+    };
+    
+    return typeNames[type] || 'QR Code';
+  };
+
+  const getTranslatedActionText = (type: string): string => {
+    const actionTexts: Record<string, string> = {
+      'url': t('openLink'),
+      'contact': t('saveContact'),
+      'wifi': t('connectWifi'),
+      'sms': t('sendSMS'),
+      'phone': t('call'),
+      'email': t('sendEmail'),
+      'geo': t('openMap'),
+      'text': t('copyText')
+    };
+    
+    return actionTexts[type] || t('copyText');
+  };
+
   const renderHistoryItem = ({ item }: { item: QRCodeHistoryItem }) => (
     <TouchableOpacity 
       style={styles.historyItem}
@@ -182,7 +214,7 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
           {formatDate(item.timestamp)}
         </Text>
         <Text style={styles.actionText}>
-          {item.actionText}
+          {getTranslatedActionText(item.type)}
         </Text>
       </View>
     </TouchableOpacity>
@@ -196,7 +228,7 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerPlaceholder} />
-        <Text style={styles.headerTitle}>Meu Histórico</Text>
+        <Text style={styles.headerTitle}>{t('myHistory')}</Text>
         {historyItems.length > 0 && (
           <TouchableOpacity
             style={styles.clearButton}
@@ -212,16 +244,16 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#ffffff" />
-            <Text style={styles.loadingText}>Carregando histórico...</Text>
+            <Text style={styles.loadingText}>{t('loading')}</Text>
           </View>
         ) : historyItems.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
               <Ionicons name="document-text-outline" size={80} color="rgba(255, 255, 255, 0.3)" />
             </View>
-            <Text style={styles.emptyTitle}>Nenhum QR Code salvo</Text>
+            <Text style={styles.emptyTitle}>{t('noHistory')}</Text>
             <Text style={styles.emptySubtitle}>
-              Escaneie QR codes e use a opção "Salvar Dados" para vê-los aqui
+              {t('startScanning')}
             </Text>
           </View>
         ) : (
@@ -246,17 +278,3 @@ export default function HistoryScreen({ userEmail }: HistoryScreenProps) {
   );
 }
 
-function getTypeDisplayName(type: string): string {
-  const typeNames: Record<string, string> = {
-    'url': 'Link',
-    'contact': 'Contato',
-    'wifi': 'WiFi',
-    'sms': 'SMS',
-    'phone': 'Telefone',
-    'email': 'Email',
-    'geo': 'Localização',
-    'text': 'Texto'
-  };
-  
-  return typeNames[type] || 'QR Code';
-}

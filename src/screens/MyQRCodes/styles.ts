@@ -45,7 +45,11 @@ export const styles = StyleSheet.create({
   
   headerRight: {
     width: 40,
+    height: 40,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   
   qrCodeCount: {
@@ -53,11 +57,12 @@ export const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    minWidth: 24,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     textAlign: 'center',
+    lineHeight: 24,
+    overflow: 'hidden',
   },
   
   // Search

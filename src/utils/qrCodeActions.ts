@@ -3,91 +3,91 @@ import * as Contacts from 'expo-contacts';
 import { QRCodeData } from './qrCodeProcessor';
 import { historyDB } from '../services/historyDatabase';
 
-export async function executeQRCodeAction(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+export async function executeQRCodeAction(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   try {
     switch (qrData.type) {
       case 'url':
-        await handleURL(qrData, userEmail, fromHistory);
+        await handleURL(qrData, userEmail, fromHistory, t);
         break;
       case 'contact':
-        await handleContact(qrData, userEmail, fromHistory);
+        await handleContact(qrData, userEmail, fromHistory, t);
         break;
       case 'wifi':
-        await handleWiFi(qrData, userEmail, fromHistory);
+        await handleWiFi(qrData, userEmail, fromHistory, t);
         break;
       case 'sms':
-        await handleSMS(qrData, userEmail, fromHistory);
+        await handleSMS(qrData, userEmail, fromHistory, t);
         break;
       case 'phone':
-        await handlePhone(qrData, userEmail, fromHistory);
+        await handlePhone(qrData, userEmail, fromHistory, t);
         break;
       case 'email':
-        await handleEmail(qrData, userEmail, fromHistory);
+        await handleEmail(qrData, userEmail, fromHistory, t);
         break;
       case 'geo':
-        await handleGeo(qrData, userEmail, fromHistory);
+        await handleGeo(qrData, userEmail, fromHistory, t);
         break;
       case 'text':
-        await handleText(qrData, userEmail, fromHistory);
+        await handleText(qrData, userEmail, fromHistory, t);
         break;
       default:
-        await handleText(qrData, userEmail, fromHistory);
+        await handleText(qrData, userEmail, fromHistory, t);
     }
   } catch (error) {
     console.error('Erro ao executar ação do QR code:', error);
-    Alert.alert('Erro', 'Não foi possível executar a ação solicitada.');
+    Alert.alert(t?.('error') || 'Erro', t?.('error') || 'Não foi possível executar a ação solicitada.');
   }
 }
 
-async function saveToHistory(qrData: QRCodeData, userEmail?: string) {
+async function saveToHistory(qrData: QRCodeData, userEmail?: string, t?: (key: string) => string) {
   try {
     await historyDB.saveQRCode(qrData, userEmail);
-    Alert.alert('Sucesso', 'Dados salvos no histórico!');
+    Alert.alert(t?.('success') || 'Sucesso', 'Dados salvos no histórico!', [{ text: t?.('ok') || 'OK' }]);
   } catch (error) {
     console.error('Erro ao salvar no histórico:', error);
-    Alert.alert('Erro', 'Não foi possível salvar no histórico.');
+    Alert.alert(t?.('error') || 'Erro', 'Não foi possível salvar no histórico.', [{ text: t?.('ok') || 'OK' }]);
   }
 }
 
-async function handleURL(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleURL(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const { url } = qrData.parsedData;
   
   Alert.alert(
-    'URL Detectada',
+    `${t?.('url') || 'URL'} ${t?.('scanResult') || 'Detectada'}`,
     qrData.description,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar', onPress: () => Clipboard.setString(url) },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('save') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyText') || 'Copiar', onPress: () => Clipboard.setString(url) },
       { 
-        text: 'Abrir Link', 
+        text: t?.('openLink') || 'Abrir Link', 
         onPress: () => Linking.openURL(url).catch(err => 
-          Alert.alert('Erro', 'Não foi possível abrir o link.')
+          Alert.alert(t?.('error') || 'Erro', 'Não foi possível abrir o link.')
         )
       }
     ]
   );
 }
 
-async function handleContact(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleContact(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const contact = qrData.parsedData;
   
   Alert.alert(
-    'Contato Detectado',
-    `Nome: ${contact.name || contact.firstName + ' ' + contact.lastName || 'Não informado'}\n` +
-    `Telefones: ${contact.phones ? contact.phones.join(', ') : 'Não informado'}\n` +
-    `Emails: ${contact.emails ? contact.emails.join(', ') : 'Não informado'}` +
-    (contact.organization ? `\nEmpresa: ${contact.organization}` : ''),
+    `${t?.('contact') || 'Contato'} ${t?.('detected') || 'detectado'}`,    
+    `${t?.('name') || 'Nome'}: ${contact.name || contact.firstName + ' ' + contact.lastName || t?.('notInformed') || 'Não informado'}\n` +
+    `${t?.('phones') || 'Telefones'}: ${contact.phones ? contact.phones.join(', ') : t?.('notInformed') || 'Não informado'}\n` +
+    `${t?.('emails') || 'Emails'}: ${contact.emails ? contact.emails.join(', ') : t?.('notInformed') || 'Não informado'}` +
+    (contact.organization ? `\n${t?.('company') || 'Empresa'}: ${contact.organization}` : ''),
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Dados', onPress: () => Clipboard.setString(qrData.rawData) },
-      { text: 'Salvar Contato', onPress: () => saveContact(contact) }
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyText') || 'Copiar Dados', onPress: () => Clipboard.setString(qrData.rawData) },
+      { text: t?.('saveContact') || 'Salvar Contato', onPress: () => saveContact(contact, t) }
     ]
   );
 }
 
-async function saveContact(contactData: any) {
+async function saveContact(contactData: any, t?: (key: string) => string) {
   try {
     const { status } = await Contacts.requestPermissionsAsync();
     
@@ -134,34 +134,34 @@ async function saveContact(contactData: any) {
     const contactId = await Contacts.addContactAsync(contact);
     
     Alert.alert(
-      'Sucesso',
+      t?.('success') || 'Sucesso',
       'Contato salvo com sucesso!',
-      [{ text: 'OK' }]
+      [{ text: t?.('ok') || 'OK' }]
     );
   } catch (error) {
     console.error('Erro ao salvar contato:', error);
     Alert.alert(
-      'Erro',
+      t?.('error') || 'Erro',
       'Não foi possível salvar o contato. Tente novamente.',
-      [{ text: 'OK' }]
+      [{ text: t?.('ok') || 'OK' }]
     );
   }
 }
 
-async function handleWiFi(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleWiFi(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const wifi = qrData.parsedData;
   
   Alert.alert(
-    'WiFi Detectado',
-    `Rede: ${wifi.ssid}\n` +
-    `Tipo: ${wifi.type}\n` +
-    `Senha: ${wifi.password ? '●●●●●●●●' : 'Sem senha'}`,
+    `${t?.('wifi') || 'WiFi'} ${t?.('detected') || 'detectado'}`,
+    `${t?.('network') || 'Rede'}: ${wifi.ssid}\n` +
+    `${t?.('securityType') || 'Tipo'}: ${wifi.type}\n` +
+    `${t?.('password') || 'Senha'}: ${wifi.password ? '●●●●●●●●' : t?.('noPassword') || 'Sem senha'}`,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Senha', onPress: () => Clipboard.setString(wifi.password || '') },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyPassword') || 'Copiar Senha', onPress: () => Clipboard.setString(wifi.password || '') },
       { 
-        text: 'Abrir Configurações', 
+        text: t?.('openSettings') || 'Abrir Configurações', 
         onPress: () => Linking.openURL('App-Prefs:WIFI').catch(() => 
           Alert.alert('Info', 'Abra as configurações de WiFi manualmente para conectar.')
         )
@@ -170,99 +170,99 @@ async function handleWiFi(qrData: QRCodeData, userEmail?: string, fromHistory: b
   );
 }
 
-async function handleSMS(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleSMS(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const sms = qrData.parsedData;
   const smsUrl = `sms:${sms.number}${sms.body ? `?body=${encodeURIComponent(sms.body)}` : ''}`;
   
   Alert.alert(
-    'SMS Detectado',
-    `Número: ${sms.number}\n${sms.body ? `Mensagem: ${sms.body}` : ''}`,
+    `${t?.('sms') || 'SMS'} ${t?.('detected') || 'detectado'}`,
+    `${t?.('number') || 'Número'}: ${sms.number}\n${sms.body ? `${t?.('message') || 'Mensagem'}: ${sms.body}` : ''}`,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Número', onPress: () => Clipboard.setString(sms.number) },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyNumber') || 'Copiar Número', onPress: () => Clipboard.setString(sms.number) },
       { 
-        text: 'Enviar SMS', 
+        text: t?.('sendSMS') || 'Enviar SMS', 
         onPress: () => Linking.openURL(smsUrl).catch(() => 
-          Alert.alert('Erro', 'Não foi possível abrir o app de SMS.')
+          Alert.alert(t?.('error') || 'Erro', 'Não foi possível abrir o app de SMS.')
         )
       }
     ]
   );
 }
 
-async function handlePhone(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handlePhone(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const phone = qrData.parsedData;
   
   Alert.alert(
-    'Telefone Detectado',
-    `Número: ${phone.number}`,
+    `${t?.('phone') || 'Telefone'} ${t?.('detected') || 'detectado'}`,
+    `${t?.('number') || 'Número'}: ${phone.number}`,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Número', onPress: () => Clipboard.setString(phone.number) },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyNumber') || 'Copiar Número', onPress: () => Clipboard.setString(phone.number) },
       { 
-        text: 'Ligar', 
+        text: t?.('call') || 'Ligar', 
         onPress: () => Linking.openURL(`tel:${phone.number}`).catch(() => 
-          Alert.alert('Erro', 'Não foi possível fazer a ligação.')
+          Alert.alert(t?.('error') || 'Erro', 'Não foi possível fazer a ligação.')
         )
       }
     ]
   );
 }
 
-async function handleEmail(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleEmail(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const email = qrData.parsedData;
   const emailUrl = `mailto:${email.address}${email.subject ? `?subject=${encodeURIComponent(email.subject)}` : ''}${email.body ? `&body=${encodeURIComponent(email.body)}` : ''}`;
   
   Alert.alert(
-    'Email Detectado',
-    `Email: ${email.address}\n${email.subject ? `Assunto: ${email.subject}\n` : ''}${email.body ? `Mensagem: ${email.body}` : ''}`,
+    `${t?.('email') || 'Email'} ${t?.('detected') || 'detectado'}`,
+    `${t?.('email') || 'Email'}: ${email.address}\n${email.subject ? `${t?.('subject') || 'Assunto'}: ${email.subject}\n` : ''}${email.body ? `${t?.('message') || 'Mensagem'}: ${email.body}` : ''}`,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Email', onPress: () => Clipboard.setString(email.address) },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyEmail') || 'Copiar Email', onPress: () => Clipboard.setString(email.address) },
       { 
-        text: 'Enviar Email', 
+        text: t?.('sendEmail') || 'Enviar Email', 
         onPress: () => Linking.openURL(emailUrl).catch(() => 
-          Alert.alert('Erro', 'Não foi possível abrir o app de email.')
+          Alert.alert(t?.('error') || 'Erro', 'Não foi possível abrir o app de email.')
         )
       }
     ]
   );
 }
 
-async function handleGeo(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleGeo(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const geo = qrData.parsedData;
   const mapsUrl = `https://maps.google.com/maps?q=${geo.latitude},${geo.longitude}`;
   
   Alert.alert(
-    'Localização Detectada',
-    `Latitude: ${geo.latitude}\nLongitude: ${geo.longitude}`,
+    'Localização detectada',
+    `${t?.('latitude') || 'Latitude'}: ${geo.latitude}\n${t?.('longitude') || 'Longitude'}: ${geo.longitude}`,
     [
-      { text: 'Cancelar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Coordenadas', onPress: () => Clipboard.setString(`${geo.latitude},${geo.longitude}`) },
+      { text: t?.('cancel') || 'Cancelar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('saveData') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyCoordinates') || 'Copiar Coordenadas', onPress: () => Clipboard.setString(`${geo.latitude},${geo.longitude}`) },
       { 
-        text: 'Abrir no Mapa', 
+        text: t?.('openMap') || 'Abrir no Mapa', 
         onPress: () => Linking.openURL(mapsUrl).catch(() => 
-          Alert.alert('Erro', 'Não foi possível abrir o mapa.')
+          Alert.alert(t?.('error') || 'Erro', 'Não foi possível abrir o mapa.')
         )
       }
     ]
   );
 }
 
-async function handleText(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false) {
+async function handleText(qrData: QRCodeData, userEmail?: string, fromHistory: boolean = false, t?: (key: string) => string) {
   const text = qrData.parsedData.text || qrData.rawData;
   
   Alert.alert(
-    'Texto Detectado',
+    `${t?.('text') || 'Texto'} ${t?.('scanResult') || 'Detectado'}`,
     text,
     [
-      { text: 'Fechar', style: 'cancel' },
-      ...(fromHistory ? [] : [{ text: 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail) }]),
-      { text: 'Copiar Texto', onPress: () => Clipboard.setString(text) }
+      { text: t?.('close') || 'Fechar', style: 'cancel' },
+      ...(fromHistory ? [] : [{ text: t?.('save') || 'Salvar Dados', onPress: () => saveToHistory(qrData, userEmail, t) }]),
+      { text: t?.('copyText') || 'Copiar Texto', onPress: () => Clipboard.setString(text) }
     ]
   );
 }

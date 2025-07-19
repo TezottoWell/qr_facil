@@ -204,5 +204,31 @@ export default {
   getAllUsers,
   insertQRCode,
   getUserQRCodes,
-  deleteQRCode
+  deleteQRCode,
+  deleteUserAccount
+};
+
+// Função para deletar completamente a conta do usuário e todos os dados associados
+export const deleteUserAccount = async (userEmail: string) => {
+  try {
+    const db = await openDatabase();
+    
+    // Deletar todos os QR codes do usuário
+    await db.runAsync(
+      'DELETE FROM qr_codes WHERE user_email = ?',
+      [userEmail]
+    );
+    
+    // Deletar o usuário
+    await db.runAsync(
+      'DELETE FROM users WHERE email = ?',
+      [userEmail]
+    );
+    
+    console.log('User account and all associated data deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('Error deleting user account:', error);
+    return false;
+  }
 };

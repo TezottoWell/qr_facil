@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { styles } from './styles';
 import { insertQRCode, QRCodeData } from '../../services/database';
 import StyledQRCode, { QRCodeStyle } from '../../components/StyledQRCode';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Componente QRCode real com estilos
 const QRCodeSVG = ({ value, size, backgroundColor, color, logoEnabled, logoSize, errorCorrectionLevel, selectedIcon, qrStyle, gradientColors, customLogoUri, logoType }: any) => (
@@ -83,27 +84,47 @@ const QRCodeForCapture = ({ value, size, backgroundColor, color, logoEnabled, lo
 
 interface NewQRCodeScreenProps {
   userEmail?: string;
+  onClose?: () => void;
 }
 
-const QR_TYPES = [
-  { id: 'text', label: 'Texto', icon: '📝' },
-  { id: 'url', label: 'Link/URL', icon: '🔗' },
-  { id: 'email', label: 'Email', icon: '📧' },
-  { id: 'phone', label: 'Telefone', icon: '📞' },
-  { id: 'sms', label: 'SMS', icon: '💬' },
-  { id: 'wifi', label: 'Wi-Fi', icon: '📶' },
-  { id: 'contact', label: 'Contato', icon: '👤' },
+// Função para obter tipos de QR traduzidos
+const getQRTypes = (t: (key: string) => string) => [
+  { id: 'text', label: t('text'), icon: '📝' },
+  { id: 'url', label: t('url'), icon: '🔗' },
+  { id: 'email', label: t('email'), icon: '📧' },
+  { id: 'phone', label: t('phone'), icon: '📞' },
+  { id: 'sms', label: t('sms'), icon: '💬' },
+  { id: 'wifi', label: t('wifi'), icon: '📶' },
+  { id: 'contact', label: t('contact'), icon: '👤' },
 ];
 
-const ERROR_CORRECTION_LEVELS = [
-  { id: 'L', label: 'Baixo (7%)', description: 'Rápido, menos resistente' },
-  { id: 'M', label: 'Médio (15%)', description: 'Equilibrado (Recomendado)' },
-  { id: 'Q', label: 'Alto (25%)', description: 'Mais resistente' },
-  { id: 'H', label: 'Máximo (30%)', description: 'Máxima resistência' },
+// Função para obter níveis de correção traduzidos
+const getErrorCorrectionLevels = (t: (key: string) => string) => [
+  { id: 'L', label: t('errorCorrectionLow'), description: t('fastLessResistant') },
+  { id: 'M', label: t('errorCorrectionMedium'), description: t('balanced') },
+  { id: 'Q', label: t('errorCorrectionQuartile'), description: t('goodForPrint') },
+  { id: 'H', label: t('errorCorrectionHigh'), description: t('maximumResistance') },
 ];
 
-export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQRCodeScreenProps) {
+// Função para obter placeholder text traduzido
+const getPlaceholderText = (type: string, t: (key: string) => string) => {
+  switch (type) {
+    case 'text': return t('enterText');
+    case 'url': return t('enterUrl');
+    case 'email': return t('enterEmail');
+    case 'phone': return t('enterPhone');
+    case 'sms': return t('enterMessage');
+    default: return t('enterText');
+  }
+};
+
+export default function NewQRCodeScreen({ userEmail = 'test@example.com', onClose }: NewQRCodeScreenProps) {
   const navigation = useNavigation();
+  const { t } = useLanguage();
+  
+  // Arrays traduzidos
+  const QR_TYPES = getQRTypes(t);
+  const ERROR_CORRECTION_LEVELS = getErrorCorrectionLevels(t);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedType, setSelectedType] = useState<QRCodeData['qr_type']>('text');
@@ -141,7 +162,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permissão necessária', 'Precisamos de permissão para acessar suas fotos.');
+        Alert.alert(t('imagePermissionTitle'), t('imagePermissionMessage'));
         return;
       }
 
@@ -158,7 +179,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
       }
     } catch (error) {
       console.error('Erro ao selecionar imagem:', error);
-      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+      Alert.alert(t('error'), t('imageSelectionError'));
     }
   };
 
@@ -203,23 +224,23 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
   const handleGenerateQRCode = async () => {
     if (!title.trim()) {
-      Alert.alert('Erro', 'Por favor, insira um título para o QR Code');
+      Alert.alert(t('error'), t('enterTitle'));
       return;
     }
 
     if (!content.trim() && selectedType !== 'wifi' && selectedType !== 'contact' && selectedType !== 'payment') {
-      Alert.alert('Erro', 'Por favor, insira o conteúdo do QR Code');
+      Alert.alert(t('error'), t('enterContent'));
       return;
     }
 
     // Validações específicas por tipo
     if (selectedType === 'wifi' && (!wifiData.ssid || !wifiData.password)) {
-      Alert.alert('Erro', 'Por favor, preencha o nome da rede e senha do Wi-Fi');
+      Alert.alert(t('error'), t('fillWifiFields'));
       return;
     }
 
     if (selectedType === 'contact' && !contactData.firstName) {
-      Alert.alert('Erro', 'Por favor, preencha pelo menos o nome do contato');
+      Alert.alert(t('error'), t('fillContactName'));
       return;
     }
 
@@ -262,12 +283,20 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
       });
 
       Alert.alert(
-        'Sucesso!',
-        'QR Code gerado e salvo com sucesso!',
+        t('success'),
+        t('success'),
         [
-          { text: 'Criar Outro', style: 'default' },
           { 
-            text: 'Compartilhar', 
+            text: t('ok'), 
+            style: 'default',
+            onPress: () => {
+              if (onClose) {
+                onClose();
+              }
+            }
+          },
+          { 
+            text: t('share'), 
             onPress: async () => {
               try {
                 if (previewRef.current) {
@@ -283,19 +312,19 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                   if (await Sharing.isAvailableAsync()) {
                     await Sharing.shareAsync(imageUri, {
                       mimeType: 'image/png',
-                      dialogTitle: `Compartilhar QR Code - ${lastGeneratedQR?.title || 'QR Code'}`,
+                      dialogTitle: `${t('shareDialogTitle')} - ${lastGeneratedQR?.title || 'QR Code'}`,
                     });
                   } else {
-                    Alert.alert('Erro', 'Compartilhamento não está disponível neste dispositivo.');
+                    Alert.alert(t('error'), t('shareNotAvailable'));
                   }
                 }
               } catch (error) {
                 console.error('Erro ao compartilhar:', error);
-                Alert.alert('Erro', `Não foi possível compartilhar o QR Code: ${error.message}`);
+                Alert.alert(t('error'), `${t('shareError')}: ${error.message}`);
               }
             }
           },
-          { text: 'Voltar', onPress: () => navigation.navigate('Home' as never) }
+          { text: t('back'), onPress: () => navigation.navigate('Home' as never) }
         ]
       );
 
@@ -312,7 +341,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
       setContactData({ firstName: '', lastName: '', phone: '', email: '', organization: '', url: '' });
 
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar o QR Code. Tente novamente.');
+      Alert.alert(t('error'), t('qrSaveError'));
       console.error('Erro ao gerar QR Code:', error);
     } finally {
       setIsGenerating(false);
@@ -324,24 +353,24 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
       case 'wifi':
         return (
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Configurações Wi-Fi</Text>
+            <Text style={styles.sectionTitle}>{t('wifiSettings')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nome da rede (SSID)"
+              placeholder={t('networkSSID')}
               value={wifiData.ssid}
               onChangeText={(text) => setWifiData({ ...wifiData, ssid: text })}
               placeholderTextColor="rgba(255,255,255,0.7)"
             />
             <TextInput
               style={styles.input}
-              placeholder="Senha"
+              placeholder={t('password')}
               value={wifiData.password}
               onChangeText={(text) => setWifiData({ ...wifiData, password: text })}
               secureTextEntry
               placeholderTextColor="rgba(255,255,255,0.7)"
             />
             <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Segurança:</Text>
+              <Text style={styles.pickerLabel}>{t('security')}:</Text>
               <View style={styles.pickerButtons}>
                 {['WPA', 'WEP', 'None'].map((security) => (
                   <TouchableOpacity
@@ -363,7 +392,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
               </View>
             </View>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Rede oculta</Text>
+              <Text style={styles.switchLabel}>{t('hiddenNetwork')}</Text>
               <Switch
                 value={wifiData.hidden}
                 onValueChange={(value) => setWifiData({ ...wifiData, hidden: value })}
@@ -377,24 +406,24 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
       case 'contact':
         return (
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Informações do Contato</Text>
+            <Text style={styles.sectionTitle}>{t('contactInfo')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nome *"
+              placeholder={t('firstName') + t('requiredField')}
               value={contactData.firstName}
               onChangeText={(text) => setContactData({ ...contactData, firstName: text })}
               placeholderTextColor="rgba(255,255,255,0.7)"
             />
             <TextInput
               style={styles.input}
-              placeholder="Sobrenome"
+              placeholder={t('lastName')}
               value={contactData.lastName}
               onChangeText={(text) => setContactData({ ...contactData, lastName: text })}
               placeholderTextColor="rgba(255,255,255,0.7)"
             />
             <TextInput
               style={styles.input}
-              placeholder="Telefone"
+              placeholder={t('phone')}
               value={contactData.phone}
               onChangeText={(text) => setContactData({ ...contactData, phone: text })}
               keyboardType="phone-pad"
@@ -402,7 +431,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
             />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('email')}
               value={contactData.email}
               onChangeText={(text) => setContactData({ ...contactData, email: text })}
               keyboardType="email-address"
@@ -410,14 +439,14 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
             />
             <TextInput
               style={styles.input}
-              placeholder="Empresa/Organização"
+              placeholder={t('organization')}
               value={contactData.organization}
               onChangeText={(text) => setContactData({ ...contactData, organization: text })}
               placeholderTextColor="rgba(255,255,255,0.7)"
             />
             <TextInput
               style={styles.input}
-              placeholder="Website"
+              placeholder={t('website')}
               value={contactData.url}
               onChangeText={(text) => setContactData({ ...contactData, url: text })}
               placeholderTextColor="rgba(255,255,255,0.7)"
@@ -430,7 +459,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
         return (
           <TextInput
             style={[styles.input, styles.contentInput]}
-            placeholder={`Digite o ${QR_TYPES.find(t => t.id === selectedType)?.label.toLowerCase() || 'conteúdo'}...`}
+            placeholder={getPlaceholderText(selectedType, t)}
             value={content}
             onChangeText={setContent}
             multiline
@@ -445,10 +474,17 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
     <LinearGradient colors={['#667eea', '#764ba2']} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home' as never)}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Novo QR Code</Text>
+        {onClose ? (
+          <TouchableOpacity 
+            style={styles.headerLeft} 
+            onPress={onClose}
+          >
+            <Text style={styles.closeButton}>✕</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerLeft} />
+        )}
+        <Text style={styles.headerTitle}>{t('newQRCode')}</Text>
         <TouchableOpacity 
           style={styles.customizeButton} 
           onPress={() => setShowCustomization(true)}
@@ -521,10 +557,10 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
         <View style={styles.form}>
           {/* Título */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Título do QR Code</Text>
+            <Text style={styles.inputLabel}>{t('title')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ex: Cartão de visita, Wi-Fi casa..."
+              placeholder={t('enterTitle')}
               value={title}
               onChangeText={setTitle}
               placeholderTextColor="rgba(255,255,255,0.7)"
@@ -533,7 +569,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
           {/* Tipo de QR Code */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Tipo de QR Code</Text>
+            <Text style={styles.inputLabel}>{t('qrType')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeSelector}>
               {QR_TYPES.map((type) => (
                 <TouchableOpacity
@@ -558,7 +594,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
           {/* Campos do formulário */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Conteúdo</Text>
+            <Text style={styles.inputLabel}>{t('content')}</Text>
             {renderFormFields()}
           </View>
         </View>
@@ -570,7 +606,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
           disabled={isGenerating}
         >
           <Text style={styles.generateButtonText}>
-            {isGenerating ? 'Gerando...' : 'Gerar QR Code'}
+            {isGenerating ? t('loading') : t('generate')}
           </Text>
         </TouchableOpacity>
         </ScrollView>
@@ -586,7 +622,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Personalizar QR Code</Text>
+              <Text style={styles.modalTitle}>{t('customize')}</Text>
               <TouchableOpacity onPress={() => setShowCustomization(false)}>
                 <Text style={styles.modalCloseButton}>✕</Text>
               </TouchableOpacity>
@@ -599,7 +635,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
             >
               {/* Estilo do QR Code */}
               <View style={styles.customSection}>
-                <Text style={styles.customSectionTitle}>✨ Estilo do QR Code</Text>
+                <Text style={styles.customSectionTitle}>✨ {t('styleQRCode')}</Text>
                 
                 <View style={styles.styleGrid}>
                   <TouchableOpacity
@@ -612,7 +648,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                       </View>
                     </View>
                     <Text style={[styles.styleLabel, qrStyle === 'traditional' && styles.styleLabelActive]}>
-                      Tradicional
+                      {t('traditional')}
                     </Text>
                   </TouchableOpacity>
 
@@ -629,7 +665,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                       </View>
                     </View>
                     <Text style={[styles.styleLabel, qrStyle === 'instagram' && styles.styleLabelActive]}>
-                      Instagram
+                      {t('instagram')}
                     </Text>
                   </TouchableOpacity>
 
@@ -646,7 +682,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                       </View>
                     </View>
                     <Text style={[styles.styleLabel, qrStyle === 'dots' && styles.styleLabelActive]}>
-                      Pontos
+                      {t('dots')}
                     </Text>
                   </TouchableOpacity>
 
@@ -660,7 +696,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                       </View>
                     </View>
                     <Text style={[styles.styleLabel, qrStyle === 'rounded' && styles.styleLabelActive]}>
-                      Arredondado
+                      {t('rounded')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -668,18 +704,18 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                 {(qrStyle === 'instagram' || qrStyle === 'rounded' || qrStyle === 'traditional' || qrStyle === 'dots') && (
                   <View style={styles.gradientSection}>
                     <Text style={styles.gradientLabel}>
-                      Paleta de Cores
+                      {t('colorPalette')}
                     </Text>
                     <View style={styles.gradientPresets}>
                       {/* Cores Sólidas */}
-                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 10, marginBottom: 5 }]}>Cores Sólidas</Text>
+                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 10, marginBottom: 5 }]}>{t('solidColors')}</Text>
                       
                       <TouchableOpacity
                         style={styles.gradientPreset}
                         onPress={() => setGradientColors(['#000000'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#000000' }]} />
-                        <Text style={styles.gradientPresetLabel}>Preto</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('black')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -687,7 +723,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                         onPress={() => setGradientColors(['#1E3A8A'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#1E3A8A' }]} />
-                        <Text style={styles.gradientPresetLabel}>Azul</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('blue')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -695,7 +731,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                         onPress={() => setGradientColors(['#059669'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#059669' }]} />
-                        <Text style={styles.gradientPresetLabel}>Verde</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('green')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -703,7 +739,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                         onPress={() => setGradientColors(['#DC2626'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#DC2626' }]} />
-                        <Text style={styles.gradientPresetLabel}>Vermelho</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('red')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -711,7 +747,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                         onPress={() => setGradientColors(['#7C3AED'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#7C3AED' }]} />
-                        <Text style={styles.gradientPresetLabel}>Roxo</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('purple')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -719,11 +755,11 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                         onPress={() => setGradientColors(['#EA580C'])}
                       >
                         <View style={[styles.gradientPresetColor, { backgroundColor: '#EA580C' }]} />
-                        <Text style={styles.gradientPresetLabel}>Laranja</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('orange')}</Text>
                       </TouchableOpacity>
 
                       {/* Gradientes */}
-                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 15, marginBottom: 5 }]}>Gradientes</Text>
+                      <Text style={[styles.gradientLabel, { fontSize: 14, marginTop: 15, marginBottom: 5 }]}>{t('gradients')}</Text>
                       
                       <TouchableOpacity
                         style={styles.gradientPreset}
@@ -735,7 +771,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Instagram</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('instagram')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -748,7 +784,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Oceano</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('ocean')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -761,7 +797,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Menta</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('mint')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -774,7 +810,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Vibrante</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('vibrant')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -787,7 +823,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Rosa</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('pink')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -800,7 +836,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Suave</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('smooth')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -813,7 +849,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Pêssego</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('peach')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -826,7 +862,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Dark</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('dark')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -839,7 +875,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                         />
-                        <Text style={styles.gradientPresetLabel}>Dourado</Text>
+                        <Text style={styles.gradientPresetLabel}>{t('golden')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -849,7 +885,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
               {/* Cores */}
               <View style={styles.customSection}>
                 <View style={styles.colorRow}>
-                  <Text style={styles.customSectionTitle}>🎨 Fundo:</Text>
+                  <Text style={styles.customSectionTitle}>🎨 {t('background')}:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScrollView}>
                     <View style={styles.colorOptions}>
                       {['#FFFFFF', '#F5F5F5', '#E3F2FD', '#E8F5E8', '#FFF3E0', '#FFEBEE', '#F3E5F5', '#E8EAF6'].map((color) => (
@@ -875,10 +911,10 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
               {/* Logo */}
               <View style={styles.customSection}>
-                <Text style={styles.customSectionTitle}>🖼️ Logo Central</Text>
+                <Text style={styles.customSectionTitle}>🖼️ {t('centralLogo')}</Text>
                 
                 <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Adicionar logo</Text>
+                  <Text style={styles.switchLabel}>{t('addLogo')}</Text>
                   <Switch
                     value={logoEnabled}
                     onValueChange={setLogoEnabled}
@@ -890,7 +926,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                 {logoEnabled && (
                   <>
                     <View style={styles.logoOptionsContainer}>
-                      <Text style={styles.logoOptionsTitle}>Escolha o tipo de logo:</Text>
+                      <Text style={styles.logoOptionsTitle}>{t('chooseLogoType')}</Text>
                       
                       {/* Opções de tipo de logo */}
                       <View style={styles.logoTypeContainer}>
@@ -905,7 +941,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             styles.logoTypeButtonText,
                             logoType === 'icon' && styles.logoTypeButtonTextActive
                           ]}>
-                            🎨 Ícones
+                            🎨 {t('icons')}
                           </Text>
                         </TouchableOpacity>
                         
@@ -920,7 +956,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             styles.logoTypeButtonText,
                             logoType === 'image' && styles.logoTypeButtonTextActive
                           ]}>
-                            📷 Imagem
+                            📷 {t('image')}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -955,7 +991,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             ) : (
                               <View style={styles.uploadPlaceholder}>
                                 <Text style={styles.uploadPlaceholderText}>📷</Text>
-                                <Text style={styles.uploadPlaceholderSubtext}>Tocar para selecionar</Text>
+                                <Text style={styles.uploadPlaceholderSubtext}>{t('tapToSelect')}</Text>
                               </View>
                             )}
                           </TouchableOpacity>
@@ -968,7 +1004,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                                 setLogoType('icon');
                               }}
                             >
-                              <Text style={styles.removeImageButtonText}>🗑️ Remover</Text>
+                              <Text style={styles.removeImageButtonText}>🗑️ {t('remove')}</Text>
                             </TouchableOpacity>
                           )}
                         </View>
@@ -977,12 +1013,12 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
                     <View style={styles.sliderSection}>
                       <View style={styles.sliderLabelRow}>
-                        <Text style={styles.sliderLabel}>Tamanho do ícone</Text>
+                        <Text style={styles.sliderLabel}>{t('iconSize')}</Text>
                         <Text style={styles.sliderValue}>{Math.round(logoSize * 100)}%</Text>
                       </View>
                       
                       <Text style={styles.sliderDescription}>
-                        Controla o tamanho do ícone no centro do QR code
+                        {t('iconSizeDescription')}
                       </Text>
                       
                       <View style={styles.sliderContainer}>
@@ -996,7 +1032,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             style={[styles.sliderButton, logoSize === 0.1 && styles.sliderButtonActive]}
                             onPress={() => setLogoSize(0.1)}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.1 && styles.sliderButtonTextActive]}>Pequeno</Text>
+                            <Text style={[styles.sliderButtonText, logoSize === 0.1 && styles.sliderButtonTextActive]}>{t('small')}</Text>
                             <Text style={[styles.sliderButtonValue, logoSize === 0.1 && styles.sliderButtonValueActive]}>10%</Text>
                           </TouchableOpacity>
                           
@@ -1004,7 +1040,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             style={[styles.sliderButton, logoSize === 0.2 && styles.sliderButtonActive]}
                             onPress={() => setLogoSize(0.2)}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.2 && styles.sliderButtonTextActive]}>Médio</Text>
+                            <Text style={[styles.sliderButtonText, logoSize === 0.2 && styles.sliderButtonTextActive]}>{t('medium')}</Text>
                             <Text style={[styles.sliderButtonValue, logoSize === 0.2 && styles.sliderButtonValueActive]}>20%</Text>
                           </TouchableOpacity>
                           
@@ -1012,7 +1048,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
                             style={[styles.sliderButton, logoSize === 0.3 && styles.sliderButtonActive]}
                             onPress={() => setLogoSize(0.3)}
                           >
-                            <Text style={[styles.sliderButtonText, logoSize === 0.3 && styles.sliderButtonTextActive]}>Grande</Text>
+                            <Text style={[styles.sliderButtonText, logoSize === 0.3 && styles.sliderButtonTextActive]}>{t('large')}</Text>
                             <Text style={[styles.sliderButtonValue, logoSize === 0.3 && styles.sliderButtonValueActive]}>30%</Text>
                           </TouchableOpacity>
                         </View>
@@ -1024,7 +1060,7 @@ export default function NewQRCodeScreen({ userEmail = 'test@example.com' }: NewQ
 
               {/* Correção de erro */}
               <View style={styles.customSection}>
-                <Text style={styles.customSectionTitle}>⚙️ Qualidade</Text>
+                <Text style={styles.customSectionTitle}>⚙️ {t('quality')}</Text>
                 
                 <View style={styles.correctionGrid}>
                   {ERROR_CORRECTION_LEVELS.map((level) => (

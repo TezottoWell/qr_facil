@@ -16,6 +16,7 @@ import {
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDatabase, insertUser } from './src/services/database';
 import { historyDB } from './src/services/historyDatabase';
+import { LanguageProvider, useLanguage } from './src/contexts/LanguageContext';
 
 // Configuração do Google Sign-In
 GoogleSignin.configure({
@@ -26,7 +27,9 @@ GoogleSignin.configure({
   forceCodeForRefreshToken: true,
 });
 
-export default function App() {
+// Componente interno que tem acesso ao contexto de tradução
+function AppContent() {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -70,7 +73,7 @@ export default function App() {
 
   const handleGoogleSignIn = async () => {
     if (!isDatabaseReady) {
-      Alert.alert('Erro', 'Banco de dados não está pronto. Tente novamente em alguns segundos.');
+      Alert.alert(t('error'), t('databaseNotReady'));
       return;
     }
 
@@ -98,10 +101,10 @@ export default function App() {
           // Não bloqueamos o login mesmo se houver erro no banco
         }
 
-        Alert.alert('Sucesso', `Bem-vindo, ${response.data.user.name}!`);
+        Alert.alert(t('success'), `${t('welcome')}, ${response.data.user.name}!`);
       } else {
         console.log('Login cancelled by user');
-        Alert.alert('Cancelado', 'Login cancelado pelo usuário');
+        Alert.alert(t('cancelled'), t('loginCancelled'));
       }
     } catch (error) {
       console.log('Erro no login:', error);
@@ -109,20 +112,20 @@ export default function App() {
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
-            Alert.alert('Cancelado', 'Login cancelado pelo usuário');
+            Alert.alert(t('cancelled'), t('loginCancelled'));
             break;
           case statusCodes.IN_PROGRESS:
-            Alert.alert('Aguarde', 'Login em progresso...');
+            Alert.alert(t('pleaseWait'), t('loginInProgress'));
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            Alert.alert('Erro', 'Google Play Services não disponível');
+            Alert.alert(t('error'), t('playServicesNotAvailable'));
             break;
           default:
-            Alert.alert('Erro', 'Algo deu errado durante o login');
+            Alert.alert(t('error'), t('loginError'));
             break;
         }
       } else {
-        Alert.alert('Erro', 'Algo deu errado durante o login');
+        Alert.alert(t('error'), t('loginError'));
       }
     } finally {
       setIsLoading(false);
@@ -134,10 +137,10 @@ export default function App() {
       await GoogleSignin.signOut();
       setUser(null);
       setIsSignedIn(false);
-      Alert.alert('Sucesso', 'Logout realizado com sucesso!');
+      Alert.alert(t('success'), t('logoutSuccess'));
     } catch (error) {
       console.log('Erro no logout:', error);
-      Alert.alert('Erro', 'Erro ao fazer logout');
+      Alert.alert(t('error'), t('logoutError'));
     }
   };
 
@@ -154,5 +157,13 @@ export default function App() {
         />
       </NavigationContainer>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }

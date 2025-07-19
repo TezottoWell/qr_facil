@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { styles } from './styles';
 import db from '../../services/database';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Componente de gradiente personalizado usando View com backgroundColor
 const GradientBackground = ({ children }: { children: React.ReactNode }) => (
@@ -22,6 +23,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ isLoading, handleGoogleSignIn }: LoginScreenProps) {
+  const { t } = useLanguage();
+  
   const handleLogin = () => {
     handleGoogleSignIn();
   };
@@ -33,7 +36,7 @@ export default function LoginScreen({ isLoading, handleGoogleSignIn }: LoginScre
           <View style={styles.logoContainer}>
             <Image source={require("../../../assets/logo.png")} style={styles.logoImg}></Image>
           </View>
-          <Text style={styles.subtitle}>Faça login para continuar</Text>
+          <Text style={styles.subtitle}>{t('loginToContinue')}</Text>
         </View>
 
         <View style={styles.loginContainer}>
@@ -50,27 +53,27 @@ export default function LoginScreen({ isLoading, handleGoogleSignIn }: LoginScre
                 style={styles.googleIcon}
               />
               <Text style={styles.googleButtonText}>
-                {isLoading ? 'Entrando...' : 'Continuar com Google'}
+                {isLoading ? t('loggingIn') : t('continueWithGoogle')}
               </Text>
             </View>
           </TouchableOpacity>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
+            <Text style={styles.dividerText}>{t('or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
           <Text style={styles.disclaimer}>
-            Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade
+            {t('termsDisclaimer')}
           </Text>
         </View>
       </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Novo no QR Fácil?{' '}
-          <Text style={styles.footerLink}>Saiba mais</Text>
+          {t('newToApp')}{' '}
+          <Text style={styles.footerLink}>{t('learnMore')}</Text>
         </Text>
       </View>
     </GradientBackground>

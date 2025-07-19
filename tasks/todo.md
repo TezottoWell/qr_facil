@@ -296,3 +296,72 @@ useFocusEffect(
 - `src/screens/MyQRCodes/index.tsx` - useFocusEffect e otimizações
 
 Agora a tela "Meus QR Codes" se atualiza automaticamente sem necessidade de refresh manual! 🚀
+
+---
+
+## 📱 ANÁLISE: Estrutura de Navegação do Aplicativo
+
+### 🎯 Objetivo
+Analisar a estrutura atual de navegação e identificar como modificar para que "Novo QR Code" seja a primeira tela.
+
+### ✅ Estrutura Atual Identificada:
+
+**1. Hierarquia de Navegação**
+```
+App.tsx (Root)
+├── LoginScreen (quando não logado)
+└── AppNavigator (quando logado)
+    └── BottomTabNavigator
+        ├── Home (Scanner) - PRIMEIRA TELA ATUAL
+        ├── MyQRCodes 
+        ├── NewQRCode
+        └── History
+```
+
+**2. Arquivos de Navegação**
+- `/mnt/c/Users/Wellington/Documents/Projetos/qr_facil/App.tsx` - Controle de autenticação
+- `/mnt/c/Users/Wellington/Documents/Projetos/qr_facil/src/navigation/AppNavigator.tsx` - Navegação condicional login/app
+- `/mnt/c/Users/Wellington/Documents/Projetos/qr_facil/src/navigation/BottomTabNavigator.tsx` - Tabs principais
+- `/mnt/c/Users/Wellington/Documents/Projetos/qr_facil/src/screens/Login/index.tsx` - Tela de login
+
+**3. Configuração das Abas (BottomTabNavigator.tsx)**
+```typescript
+<Tab.Screen name="Home" />           // Scanner QR - PRIMEIRA ATUAL
+<Tab.Screen name="MyQRCodes" />      // Meus QR Codes
+<Tab.Screen name="NewQRCode" />      // Novo QR Code - DESEJADA COMO PRIMEIRA
+<Tab.Screen name="History" />        // Histórico
+```
+
+### 🔄 Modificações Necessárias para "Novo QR Code" como Primeira Tela:
+
+**1. Alterar ordem das abas no BottomTabNavigator.tsx**
+- ✅ Mover `<Tab.Screen name="NewQRCode" />` para primeira posição
+- ✅ Reorganizar demais abas conforme prioridade desejada
+
+**2. Opcional: Atualizar propriedade `initialRouteName`**
+- ✅ Adicionar `initialRouteName="NewQRCode"` no Tab.Navigator
+- ✅ Garantir que mesmo com deep links a tela correta seja inicial
+
+**3. Considerações de UX**
+- ✅ Verificar se ícones e títulos fazem sentido na nova ordem
+- ✅ Avaliar se mudança beneficia fluxo do usuário
+
+### 📋 Tarefas para Implementação:
+
+#### 1. ⏳ Reorganizar ordem das abas
+- [ ] Mover NewQRCode para primeira posição no BottomTabNavigator
+- [ ] Definir nova ordem lógica das demais abas
+- [ ] Adicionar initialRouteName="NewQRCode"
+
+#### 2. ⏳ Testar navegação
+- [ ] Verificar se "Novo QR Code" aparece como primeira aba
+- [ ] Confirmar que após login vai direto para tela correta
+- [ ] Testar navegação entre abas
+
+#### 3. ⏳ Ajustes de UX (se necessário)
+- [ ] Revisar fluxo de usuário com nova ordem
+- [ ] Verificar se ícones/títulos precisam ajuste
+- [ ] Testar em dispositivo real
+
+### 🎯 Resultado Esperado:
+Após as modificações, quando usuário fizer login, a primeira tela será "Novo QR Code" ao invés do "Scanner QR".

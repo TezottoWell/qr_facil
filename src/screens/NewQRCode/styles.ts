@@ -71,6 +71,12 @@ export const styles = StyleSheet.create({
   customizeIcon: {
     fontSize: 20,
   },
+
+  closeButton: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
   
   // Conteúdo
   content: {
